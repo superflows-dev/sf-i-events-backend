@@ -4,6 +4,7 @@ import { processGetUnmappedEvents } from './getunmappedevents.mjs';
 import { processGetUserEvents } from './getuserevents.mjs';
 import { processGetEventMappings } from './geteventmappings.mjs';
 import { processDeleteEventMappings } from './deleteeventmappings.mjs';
+import { processGetCalendar } from './getcalendar.mjs';
 
 export const handler = async (event, context, callback) => {
     
@@ -32,6 +33,12 @@ export const handler = async (event, context, callback) => {
           response.statusCode = resultMapEvents.statusCode;
         break;
         
+        case "/getcalendar":
+          const resultGetCalendar = await processGetCalendar(event);
+          response.body = JSON.stringify(resultGetCalendar.body);
+          response.statusCode = resultGetCalendar.statusCode;
+        break;
+
         case "/synccalendar":
           const resultSyncCalendar = await processSyncCalendar(event);
           response.body = JSON.stringify(resultSyncCalendar.body);
