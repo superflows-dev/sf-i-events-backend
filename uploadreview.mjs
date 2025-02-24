@@ -1,7 +1,7 @@
 // synccalendar (projectid, events)
 
 
-import { KMS_KEY_REGISTER, BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, s3Client } from "./globals.mjs";
+import { KMS_KEY_REGISTER, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, s3Client } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
 import { processEncryptData } from './encryptdata.mjs';
@@ -10,8 +10,9 @@ import { processNotifyChange } from './notifychange.mjs';
 import { processAddLog } from './addlog.mjs';
 import { processCheckLastModifiedFile } from './checklastmodifiedfile.mjs'
 import { processSendEmail } from './sendemail.mjs'
+import { processGetModuleBucketname } from './getmodulebucketname.mjs'
+import { processAddUserLastTime } from './adduserlasttime.mjs'
 import { Buffer } from 'buffer';
-
 export const processUploadReview = async (event) => {
     
     console.log('processing upload', event.body);
@@ -66,7 +67,7 @@ export const processUploadReview = async (event) => {
     var entityid = null;
     var locationid = null;
     var username = null;
-    
+    var userid = null;
     try {
         projectid = JSON.parse(event.body).projectid.trim();
         console.log(projectid);
@@ -85,6 +86,7 @@ export const processUploadReview = async (event) => {
         mmddyyyy = JSON.parse(event.body).mmddyyyy;
         console.log(mmddyyyy);
         username = JSON.parse(event.body).username;
+        userid = JSON.parse(event.body).userid;
     } catch (e) {
         console.log('e',e)
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
@@ -145,7 +147,13 @@ export const processUploadReview = async (event) => {
     //   // processAddLog(userId, 'detail', event, response, response.statusCode)
     //     return response;
     // }
-    
+    let module = "events";
+    try {
+        module = JSON.parse(event.body).module ?? "module";
+    }catch(e){
+        console.log('e',e)
+    }
+    let bucketname = processGetModuleBucketname(module);
     let mm = mmddyyyy.split('/')[0]
     
     let assReports = {};
@@ -159,7 +167,7 @@ export const processUploadReview = async (event) => {
     let _event = {}
     while(!flag && index < 5){
         var command = new GetObjectCommand({
-          Bucket: BUCKET_NAME,
+          Bucket: bucketname,
           Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",
         });
         
@@ -210,16 +218,28 @@ export const processUploadReview = async (event) => {
         var commentsText = comments + ' (Approved: '+(approved?'Yes':'No')+')';
         var flagNoReport = false
         var errorVal = 400
+        var errMsg = ""
         if(dbComments.length === 0){
             flagNoReport = true;
             errorVal = 401
-        }else if(dbComments.length > 0 && dbComments[dbComments.length - 1].author !== "Reporter"){
-            console.log('top comment', dbComments)
-            flagNoReport = true;
-            errorVal = 402
+            errMsg = "Empty Reporting!"
+        }else if(dbComments.length > 0){
+            let flagApproveCheck = false
+            if(dbComments[dbComments.length - 1].author == "Approver" || dbComments[dbComments.length - 1].author == "Auditor"){
+                if(data.approved != approved){
+                    flagApproveCheck = true;
+                    flagNoReport = false;
+                }
+            }
+            if(!flagApproveCheck && dbComments[dbComments.length - 1].author !== "Reporter"){
+                flagNoReport = true;
+                errorVal = 402
+                errMsg = "Duplicate reporting!"
+            }
         }
         if(flagNoReport){
-            const response = {statusCode: errorVal, body: {result: false, message: "Review not uploaded"}};
+            console.log('comments', dbComments)
+            const response = {statusCode: errorVal, body: {result: false, message: errMsg}};
             // processAddLog(userId, 'upload', event, response, response.statusCode)
             return response;
         }
@@ -245,7 +265,7 @@ export const processUploadReview = async (event) => {
         
         assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] = strDataEncrypt;
         index++;
-        flag = await processCheckLastModifiedFile(BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",lastupdatedReports)
+        flag = await processCheckLastModifiedFile(BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",lastupdatedReports, bucketname)
     }
     if(!flag){
         let bodyHtml = "File checking failed for reporting file: " + BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json" + "<br /><br />LastModified:" + lastupdatedReports.toString() + "<br /><br />Input: " + event.body
@@ -256,7 +276,7 @@ export const processUploadReview = async (event) => {
     }
     
     let putCommand = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
+        Bucket: bucketname,
         Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",
         Body: JSON.stringify(assReports),
         ContentType: 'application/json'
@@ -269,7 +289,7 @@ export const processUploadReview = async (event) => {
     }
     let assReportsMonthly = {};
     command = new GetObjectCommand({
-      Bucket: BUCKET_NAME,
+      Bucket: bucketname,
       Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_" + mm + "_enc.json",
     });
     
@@ -291,7 +311,7 @@ export const processUploadReview = async (event) => {
     assReportsMonthly[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] = strDataEncrypt;
     
     putCommand = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
+        Bucket: bucketname,
         Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_" + mm + "_enc.json",
         Body: JSON.stringify(assReportsMonthly),
         ContentType: 'application/json'
@@ -303,10 +323,11 @@ export const processUploadReview = async (event) => {
       console.log('putCommand err', err); 
     }
     const notifyChange = await processNotifyChange(event["headers"]["Authorization"], data, '/actionalert');
-    console.log('notifyChange', notifyChange);
+    await processAddUserLastTime(projectid, userid, 'lastaction')
+    console.log('notifyChange', notifyChange)
     // const response = {statusCode: 200, body: {result: true, notifyChange: notifyChange}};
     const response = {statusCode: 200, body: {result: true, notifyChange: data, event: _event}};
-    processAddLog(userId, 'upload', event, response, response.statusCode)
+    processAddLog(userId, 'uploadReview', event, response, response.statusCode)
     return response;
 
 }

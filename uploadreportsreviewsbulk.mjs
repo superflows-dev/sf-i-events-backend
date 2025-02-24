@@ -1,19 +1,21 @@
 import { processAuthenticate } from './authenticate.mjs';
 import { processAddLog } from './addlog.mjs';
-import { processUploadAudit1 } from './uploadaudit.1.mjs';
-import { schedulerClient, CreateScheduleCommand, s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING, REPORTING_RETRY_LIMIT } from './globals.mjs';
+import { processUploadReview } from './uploadreview.mjs';
+import { processUploadReport } from './uploadreport.mjs';
+import { schedulerClient, CreateScheduleCommand, s3Client, PutObjectCommand, GetObjectCommand, BUCKET_FOLDER_REPORTING, REPORTING_RETRY_LIMIT } from './globals.mjs';
 import { processNotifyChange } from './notifychange.mjs';
 import { processCheckRequestid } from './checkrequestid.mjs'
 import { newUuidV4 } from './newuuid.mjs'
-import { processEncryptData } from './encryptdata.mjs';
+import { processEncryptData } from './encryptdata.mjs'
 import { processDecryptData } from './decryptdata.mjs'
 import { processSendEmail } from './sendemail.mjs'
 import { processGetModuleBucketname } from './getmodulebucketname.mjs'
 import { processCheckLastModifiedFile } from './checklastmodifiedfile.mjs'
-import { Buffer } from 'buffer';
-export const processUploadAuditsBulk1 = async (event) => {
+import { Buffer } from "buffer"
+export const processUploadReportsReviewsBulk = async (event) => {
     
-    console.log('processing upload', event.body);
+    console.log('processing review', event.body);
+    
     let flagRequest = await processCheckRequestid(event.requestid)
     if(!flagRequest){
         console.log('returning uploadBulk');
@@ -54,10 +56,13 @@ export const processUploadAuditsBulk1 = async (event) => {
     
     
     // const userId = "1234";
+    // let bodyHtml = "InputBody: " + event.body + "<br /><br />"
+    // let subject = "Bulk Upload Review params - " + event.requestid
+    // await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech", subject,"", bodyHtml);
     let bodyArr = JSON.parse(event.body)
     let flagReported = false;
     let projectid = null;
-    let retryattempts = '0';
+    let retryattempts = "0";
     let module = "events";
     let bucketname = "";
     for( let [i,bodyObj] of bodyArr.entries()){
@@ -73,7 +78,13 @@ export const processUploadAuditsBulk1 = async (event) => {
             console.log('module error', e)
         }
         bucketname = processGetModuleBucketname(module);
+        // bodyHtml = "considering index: " + i + "<br /><br />"
+        // subject = "Bulk Upload Review considering index - " + event.requestid
+        // await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech", subject,"", bodyHtml);
         if(i == 0){
+            let bodyHtml = "populating queue<br /><br />"
+            let subject = "Bulk Upload Review populate queue - " + event.requestid
+            await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech", subject,"", bodyHtml);
             let lastUpdateBulk;
             let flagBulk = false;
             let jsonBulkReportsData = {}
@@ -121,40 +132,69 @@ export const processUploadAuditsBulk1 = async (event) => {
               console.log('putCommand err', err); 
             }
         }
-        let tempEvent = event;
-        event.body = JSON.stringify(bodyObj);
-        let resultUploadAudit = await processUploadAudit1(tempEvent);
-        // let resultUploadAudit = {statusCode: new Date().getTime() % 2 == 0 ? 200 : 400, event: {}};
-        if(resultUploadAudit.statusCode == 200){
-            let _event = resultUploadAudit.body.event
-            bodyObj.processed = true;
-            bodyObj.action = "audited";
-            bodyObj.shortid = JSON.parse(_event)['shortid']
-            bodyObj.entityname = JSON.parse(_event)['entityname']
-            bodyObj.locationname = JSON.parse(_event)['locationname']
-            bodyObj.statute = JSON.parse(_event)['statute']
-            bodyObj.obligationtitle = JSON.parse(_event)['obligationtitle']
-            bodyObj.reporters = JSON.parse(_event)['reporters']
-            bodyObj.approvers = JSON.parse(_event)['approvers']
-            bodyArr[i] = bodyObj;
+        let tempEvent = {};
+        tempEvent['headers'] = event['headers'];
+        tempEvent.body = JSON.stringify(bodyObj);
+        // let resultUploadReview = await processUploadReview1(tempEvent);
+        // console.log('upload review response', resultUploadReview)
+        // let bodyHtml = "uploadReview response: " + JSON.stringify(resultUploadReview) + "<br /><br />Body: " + JSON.stringify(tempEvent) + "<br /><br />"
+        // let subject = "Bulk Upload Review resultUploadReview - " + event.requestid
+        // await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech", subject,"", bodyHtml);
+        let resultUploadReport = await processUploadReport(tempEvent);
+        if(resultUploadReport.statusCode == 200){
+            let tempObj = bodyObj;
+            tempObj.comments = "Auto Approved"
+            tempEvent.body = JSON.stringify(tempObj)
+            let resultUploadReview = await processUploadReview(tempEvent);
+            if(resultUploadReview.statusCode == 200){
+                let _event = resultUploadReview.body.event
+                bodyObj.processed = true;
+                bodyObj.action = "reviewed";
+                bodyObj.shortid = JSON.parse(_event)['shortid']
+                bodyObj.entityname = JSON.parse(_event)['entityname']
+                bodyObj.locationname = JSON.parse(_event)['locationname']
+                bodyObj.statute = JSON.parse(_event)['statute']
+                bodyObj.obligationtitle = JSON.parse(_event)['obligationtitle']
+                bodyObj.reporters = JSON.parse(_event)['reporters']
+                bodyObj.approvers = JSON.parse(_event)['approvers']
+                bodyArr[i] = bodyObj;
+                
+            }else{
+                retryattempts  = (parseInt(retryattempts) + 1) + ""
+                bodyArr[i].statusCode = resultUploadReview.statusCode
+                bodyArr[i].retryattempts = retryattempts
+                if(parseInt(retryattempts) >= REPORTING_RETRY_LIMIT){
+                    bodyArr[i].processed = true;
+                    let bodyHtml = "InputBody: " + JSON.stringify(bodyArr) + "<br /><br />"
+                    let subject = "Bulk Auto Approve Review failed - " + event.requestid
+                    await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech, jomon.j@flagggrc.tech", subject,"", bodyHtml);
+                }
+            }
         }else{
             retryattempts  = (parseInt(retryattempts) + 1) + ""
+            bodyArr[i].statusCode = resultUploadReport.statusCode
             bodyArr[i].retryattempts = retryattempts
-            bodyArr[i].statusCode = resultUploadAudit.statusCode
+            if(parseInt(retryattempts) >= REPORTING_RETRY_LIMIT){
+                bodyArr[i].processed = true;
+                let bodyHtml = "InputBody: " + JSON.stringify(bodyArr) + "<br /><br />"
+                let subject = "Bulk Auto Approve Report failed - " + event.requestid
+                await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech, jomon.j@flagggrc.tech", subject,"", bodyHtml);
+            }
         }
         flagReported = true;
         break;
         
     }
-    
-    if(parseInt(retryattempts) >= REPORTING_RETRY_LIMIT){
-        let bodyHtml = "InputBody: " + JSON.stringify(bodyArr) + "<br /><br />"
-        let subject = "Bulk Audit failed - " + event.requestid
-        await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tec, jomon.j@flagggrc.techh", subject,"", bodyHtml);
-    }else if(flagReported){
+    let notifyChange;
+    // if(parseInt(retryattempts) >= REPORTING_RETRY_LIMIT){
+    //     let bodyHtml = "InputBody: " + event.body + "<br /><br />"
+    //     let subject = "Bulk Review failed - " + event.requestid
+    //     await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech", subject,"", bodyHtml);
+    // }else
+    if(flagReported){
     
         let currentTime = new Date().getTime()
-        let scheduleDate = new Date(currentTime + 100);
+        let scheduleDate = new Date(currentTime + 2*1000);
         let inputObj = {
             path:event['path'] ?? event['rawPath'],
             requestid: newUuidV4(),
@@ -164,7 +204,7 @@ export const processUploadAuditsBulk1 = async (event) => {
         let inputStr = JSON.stringify(inputObj)
         // console.log('inputObj', inputObj);
         const input = { // CreateScheduleInput
-        Name: "RULE_Audit_" + projectid + "_" + (new Date().getTime()), // required
+        Name: "RULE_Review_" + projectid + "_" + (new Date().getTime()), // required
         ScheduleExpression: "at(" + scheduleDate.toISOString().split('.')[0] + ")", // required
         Target: { // Target
           Arn: "arn:aws:lambda:us-east-1:181895849565:function:F_sf-i-events_FlaggGRC-Events_1683434598476_test", // required
@@ -184,7 +224,11 @@ export const processUploadAuditsBulk1 = async (event) => {
         const scheduleCommand = new CreateScheduleCommand(input);
         let responseSchedule = await schedulerClient.send(scheduleCommand);
         console.log('Job Scheduled', responseSchedule.ScheduleArn)
+        // bodyHtml = "Scheduler result: " + JSON.stringify(responseSchedule) + "<br /><br />Params: " + inputStr +"<br />"
+        // subject = "Bulk Upload Review scheduler - " + event.requestid
+        // await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech", subject,"", bodyHtml);
     }else{
+        //dashboard send email call
         for(let tempObj of bodyArr){
             module = "events";
             try {
@@ -195,9 +239,8 @@ export const processUploadAuditsBulk1 = async (event) => {
             bucketname = processGetModuleBucketname(module);
             break;
         }
-        //dashboard send email call
         let getCommand = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucketname,
             Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
         })
         let responseS3;
@@ -213,16 +256,17 @@ export const processUploadAuditsBulk1 = async (event) => {
             let decryptedData = await processDecryptData(projectid,responseBuffer.toString() )
             jsonBulkReportsData = JSON.parse(decryptedData);
         }catch(e){
-            console.log('error', e);
+            console.log('bulk reading err', getCommand, e)
             jsonBulkReportsData = {}
         }
         for(let tempObj of bodyArr){
             let sortid = tempObj.mmddyyyy + ';' + tempObj.entityid + ';' + tempObj.locationid + ';' + tempObj.eventid
+            console.log('temp sortid', sortid, jsonBulkReportsData[sortid], jsonBulkReportsData);
             delete jsonBulkReportsData[sortid]
         }
         let encryptedData = await processEncryptData(projectid, JSON.stringify(jsonBulkReportsData))
         let putCommand = new PutObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucketname,
             Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
             Body: encryptedData,
             ContentType: 'application/json'
@@ -233,9 +277,10 @@ export const processUploadAuditsBulk1 = async (event) => {
         } catch (err) {
           console.log('putCommand err', err); 
         }
-        await processNotifyChange(event["headers"]["Authorization"], bodyArr, '/bulkreportalert');
+        notifyChange = await processNotifyChange(event["headers"]["Authorization"], bodyArr, '/bulkreportalert');
     }
-    const response = {statusCode: 200, body: {result: true}};
+    
+    const response = {statusCode: 200, body: {result: true, notifychange: notifyChange}};
     processAddLog('1234', 'uploadReviewBulk', event, response, response.statusCode)
     return response;
 

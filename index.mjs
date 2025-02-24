@@ -30,12 +30,8 @@ import { processUpdateRcmNotifications } from './updatercmnotifications.mjs';
 import { processGetCalendarJobs } from './getcalendarjobs.mjs';
 import { processGetAllMyEvents } from './getallmyevents.mjs';
 import { processGetAllCountryEvents } from './getallcountryevents.mjs';
-import { processGetAllCountryEvents1 } from './getallcountryevents.1.mjs';
-import { processGetAllCountryEvents2 } from './getallcountryevents.2.mjs';
-import { processGetAllCountryEvents3 } from './getallcountryevents.3.mjs';
 import { processCompileAllCountryEvents } from './compileallcountryevents.mjs';
 import { processGetAllFunctionEvents } from './getallfunctionevents.mjs'; // deprecated
-import { processGetAllFunctionEvents1 } from './getallfunctionevents.1.mjs'; // deprecated
 import { processGetNextUserEvents } from './getnextuserevents.mjs';
 import { processGetUserEvents } from './getuserevents.mjs';
 import { processDeleteEventMappings } from './deleteeventmappings.mjs';
@@ -52,24 +48,13 @@ import { processGetCalendarTrigger } from './getcalendartrigger.mjs';
 import { processGetCalendarRegister } from './getcalendarregister.mjs';
 import { processUpload } from './upload.mjs';
 import { processUploadReport } from './uploadreport.mjs';
-import { processUploadReport1 } from './uploadreport.1.mjs';
-import { processUploadReport2 } from './uploadreport.2.mjs';
 import { processUploadReportsBulk } from './uploadreportsbulk.mjs';
-import { processUploadReportsBulk1 } from './uploadreportsbulk.1.mjs';
-import { processUploadReportsBulk2 } from './uploadreportsbulk.2.mjs';
 import { processUploadReview } from './uploadreview.mjs';
-import { processUploadReview1 } from './uploadreview.1.mjs';
-import { processUploadReview2 } from './uploadreview.2.mjs';
 import { processUploadReviewsBulk } from './uploadreviewsbulk.mjs';
-import { processUploadReviewsBulk1 } from './uploadreviewsbulk.1.mjs';
-import { processUploadReviewsBulk2 } from './uploadreviewsbulk.2.mjs';
-import { processUploadReportsReviewsBulk1 } from './uploadreportsreviewsbulk.1.mjs';
-import { processUploadReportsReviewsBulk2 } from './uploadreportsreviewsbulk.2.mjs';
+import { processUploadReportsReviewsBulk } from './uploadreportsreviewsbulk.mjs';
 import { processDeleteReview } from './deletereview.mjs';
 import { processUploadAudit } from './uploadaudit.mjs';
-import { processUploadAudit1 } from './uploadaudit.1.mjs';
 import { processUploadAuditsBulk } from './uploadauditsbulk.mjs';
-import { processUploadAuditsBulk1 } from './uploadauditsbulk.1.mjs';
 import { processUploadExtract } from './uploadextract.mjs';
 import { processDdbPut } from './ddbput.mjs';
 import { processDdbQuery } from './ddbquery.mjs';
@@ -81,7 +66,6 @@ import { processScheduleGetCalendarJob } from './schedulegetcalendarjob.mjs'
 import { processGetReports } from './getreports.mjs'
 import { processUpdateReportDate } from './updatereportdate.mjs'
 import { processGetAllEventDetails } from './getalleventdetails.mjs'
-import { processGetAllEventDetails1 } from './getalleventdetails.1.mjs'
 import { processMigrateReporting } from './migratereporting.mjs'
 import { processGetAllMyQuestions } from './getallmyquestions.mjs'
 import { processCopyReportingToMonthly } from './copyreportingtomonthly.mjs'
@@ -379,27 +363,7 @@ export const handler = async (event, context, callback) => {
           response.body = JSON.stringify(resultGetAllCountryEvents.body);
           response.statusCode = resultGetAllCountryEvents.statusCode;
         break;
-        case "/"+ENTITY_NAME+"/getallcountryevents1":
-        case "/getallcountryevents1":
-          console.log('before getallcountryevents1');
-          const resultGetAllCountryEvents1 = await processGetAllCountryEvents1(event);
-          response.body = JSON.stringify(resultGetAllCountryEvents1.body);
-          response.statusCode = resultGetAllCountryEvents1.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/getallcountryevents2":
-        case "/getallcountryevents2":
-          console.log('before getallcountryevents2');
-          const resultGetAllCountryEvents2 = await processGetAllCountryEvents2(event);
-          response.body = JSON.stringify(resultGetAllCountryEvents2.body);
-          response.statusCode = resultGetAllCountryEvents2.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/getallcountryevents3":
-        case "/getallcountryevents3":
-          console.log('before getallcountryevents3');
-          const resultGetAllCountryEvents3 = await processGetAllCountryEvents3(event);
-          response.body = JSON.stringify(resultGetAllCountryEvents3.body);
-          response.statusCode = resultGetAllCountryEvents3.statusCode;
-        break;
+        
         case "/"+ENTITY_NAME+"/compileallcountryevents":
         case "/compileallcountryevents":
           console.log('before compileallcountryevents');
@@ -422,13 +386,6 @@ export const handler = async (event, context, callback) => {
           const resultGetAllFunctionEvents = await processGetAllFunctionEvents(event);
           response.body = JSON.stringify(resultGetAllFunctionEvents.body);
           response.statusCode = resultGetAllFunctionEvents.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/getallfunctionevents1":
-        case "/getallfunctionevents1":
-          // deprecated
-          const resultGetAllFunctionEvents1 = await processGetAllFunctionEvents1(event);
-          response.body = JSON.stringify(resultGetAllFunctionEvents1.body);
-          response.statusCode = resultGetAllFunctionEvents1.statusCode;
         break;
         
         case "/"+ENTITY_NAME+"/getmappedstatutes":
@@ -556,18 +513,6 @@ export const handler = async (event, context, callback) => {
           response.body = JSON.stringify(resultUploadReport.body);
           response.statusCode = resultUploadReport.statusCode;
         break;
-        case "/"+ENTITY_NAME+"/uploadreport1":
-        case "/uploadreport1":
-          const resultUploadReport1 = await processUploadReport1(event);
-          response.body = JSON.stringify(resultUploadReport1.body);
-          response.statusCode = resultUploadReport1.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreport2":
-        case "/uploadreport2":
-          const resultUploadReport2 = await processUploadReport2(event);
-          response.body = JSON.stringify(resultUploadReport2.body);
-          response.statusCode = resultUploadReport2.statusCode;
-        break;
         
         case "/"+ENTITY_NAME+"/uploadreportsbulk":
         case "/uploadreportsbulk":
@@ -575,36 +520,12 @@ export const handler = async (event, context, callback) => {
           response.body = JSON.stringify(resultUploadReportsBulk.body);
           response.statusCode = resultUploadReportsBulk.statusCode;
         break;
-        case "/"+ENTITY_NAME+"/uploadreportsbulk1":
-        case "/uploadreportsbulk1":
-          const resultUploadReportsBulk1 = await processUploadReportsBulk1(event);
-          response.body = JSON.stringify(resultUploadReportsBulk1.body);
-          response.statusCode = resultUploadReportsBulk1.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreportsbulk2":
-        case "/uploadreportsbulk2":
-          const resultUploadReportsBulk2 = await processUploadReportsBulk2(event);
-          response.body = JSON.stringify(resultUploadReportsBulk2.body);
-          response.statusCode = resultUploadReportsBulk2.statusCode;
-        break;
         
         case "/"+ENTITY_NAME+"/uploadreview":
         case "/uploadreview":
           const resultUploadReview = await processUploadReview(event);
           response.body = JSON.stringify(resultUploadReview.body);
           response.statusCode = resultUploadReview.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreview1":
-        case "/uploadreview1":
-          const resultUploadReview1 = await processUploadReview1(event);
-          response.body = JSON.stringify(resultUploadReview1.body);
-          response.statusCode = resultUploadReview1.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreview2":
-        case "/uploadreview2":
-          const resultUploadReview2 = await processUploadReview2(event);
-          response.body = JSON.stringify(resultUploadReview2.body);
-          response.statusCode = resultUploadReview2.statusCode;
         break;
         
         case "/"+ENTITY_NAME+"/uploadreviewsbulk":
@@ -614,33 +535,13 @@ export const handler = async (event, context, callback) => {
           response.body = JSON.stringify(resultUploadReviewsBulk.body);
           response.statusCode = resultUploadReviewsBulk.statusCode;
         break;
-        case "/"+ENTITY_NAME+"/uploadreviewsbulk1":
-        case "/uploadreviewsbulk1":
-          const resultUploadReviewsBulk1 = await processUploadReviewsBulk1(event);
-          console.log('response', resultUploadReviewsBulk1)
-          response.body = JSON.stringify(resultUploadReviewsBulk1.body);
-          response.statusCode = resultUploadReviewsBulk1.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreviewsbulk2":
-        case "/uploadreviewsbulk2":
-          const resultUploadReviewsBulk2 = await processUploadReviewsBulk2(event);
-          console.log('response', resultUploadReviewsBulk2)
-          response.body = JSON.stringify(resultUploadReviewsBulk2.body);
-          response.statusCode = resultUploadReviewsBulk2.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreportsreviewsbulk1":
-        case "/uploadreportsreviewsbulk1":
-          const resultUploadReportsReviewsBulk1 = await processUploadReportsReviewsBulk1(event);
-          console.log('response', resultUploadReportsReviewsBulk1)
-          response.body = JSON.stringify(resultUploadReportsReviewsBulk1.body);
-          response.statusCode = resultUploadReportsReviewsBulk1.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadreportsreviewsbulk2":
-        case "/uploadreportsreviewsbulk2":
-          const resultUploadReportsReviewsBulk2 = await processUploadReportsReviewsBulk2(event);
-          console.log('response', resultUploadReportsReviewsBulk2)
-          response.body = JSON.stringify(resultUploadReportsReviewsBulk2.body);
-          response.statusCode = resultUploadReportsReviewsBulk2.statusCode;
+        
+        case "/"+ENTITY_NAME+"/uploadreportsreviewsbulk":
+        case "/uploadreportsreviewsbulk":
+          const resultUploadReportsReviewsBulk = await processUploadReportsReviewsBulk(event);
+          console.log('response', resultUploadReportsReviewsBulk)
+          response.body = JSON.stringify(resultUploadReportsReviewsBulk.body);
+          response.statusCode = resultUploadReportsReviewsBulk.statusCode;
         break;
         
         case "/"+ENTITY_NAME+"/deletereview":
@@ -656,24 +557,12 @@ export const handler = async (event, context, callback) => {
           response.body = JSON.stringify(resultUploadAudit.body);
           response.statusCode = resultUploadAudit.statusCode;
         break;
-        case "/"+ENTITY_NAME+"/uploadaudit1":
-        case "/uploadaudit1":
-          const resultUploadAudit1 = await processUploadAudit1(event);
-          response.body = JSON.stringify(resultUploadAudit1.body);
-          response.statusCode = resultUploadAudit1.statusCode;
-        break;
         
         case "/"+ENTITY_NAME+"/uploadauditsbulk":
         case "/uploadauditsbulk":
           const resultUploadAuditsBulk = await processUploadAuditsBulk(event);
           response.body = JSON.stringify(resultUploadAuditsBulk.body);
           response.statusCode = resultUploadAuditsBulk.statusCode;
-        break;
-        case "/"+ENTITY_NAME+"/uploadauditsbulk1":
-        case "/uploadauditsbulk1":
-          const resultUploadAuditsBulk1 = await processUploadAuditsBulk1(event);
-          response.body = JSON.stringify(resultUploadAuditsBulk1.body);
-          response.statusCode = resultUploadAuditsBulk1.statusCode;
         break;
         
         case "/"+ENTITY_NAME+"/getdecryptedjson":
@@ -709,12 +598,6 @@ export const handler = async (event, context, callback) => {
           const responseGetAllEventDetails = await processGetAllEventDetails(event);
           response.body = JSON.stringify(responseGetAllEventDetails.body)
           response.statusCode = responseGetAllEventDetails.statusCode
-        break;
-        case "/"+ENTITY_NAME+"/getalleventdetails1":
-        case "/getalleventdetails1":
-          const responseGetAllEventDetails1 = await processGetAllEventDetails1(event);
-          response.body = JSON.stringify(responseGetAllEventDetails1.body)
-          response.statusCode = responseGetAllEventDetails1.statusCode
         break;
         
         case "/"+ENTITY_NAME+"/migratereporting":

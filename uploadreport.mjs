@@ -1,7 +1,7 @@
 // synccalendar (projectid, events)
 
 
-import { KMS_KEY_REGISTER, BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, s3Client } from "./globals.mjs";
+import { KMS_KEY_REGISTER, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, s3Client } from "./globals.mjs";
 import { processEncryptData } from './encryptdata.mjs';
 import { processDecryptData } from './decryptdata.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
@@ -10,10 +10,12 @@ import { processNotifyChange } from './notifychange.mjs';
 import { processAddLog } from './addlog.mjs';
 import { processSendEmail } from './sendemail.mjs'
 import { processCheckLastModifiedFile } from './checklastmodifiedfile.mjs'
+import { processGetModuleBucketname } from './getmodulebucketname.mjs'
+import { processAddUserLastTime } from './adduserlasttime.mjs'
 import { Buffer } from 'buffer';
 export const processUploadReport = async (event) => {
     
-    console.log('processing upload', event.body);
+    // console.log('processing upload', event.body);
     
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -55,7 +57,6 @@ export const processUploadReport = async (event) => {
     var type = null;
     var comments = null;
     var docs = null;
-    var approved = null;
     var mmddyyyy = null;
     var dateofcompletion = null;
     var entityid = null;
@@ -67,25 +68,14 @@ export const processUploadReport = async (event) => {
     var year = null;
     try {
         projectid = JSON.parse(event.body).projectid.trim();
-        console.log(projectid);
         entityid = JSON.parse(event.body).entityid.trim();
-        console.log(entityid);
         locationid = JSON.parse(event.body).locationid.trim();
-        console.log(locationid);
         eventid = JSON.parse(event.body).eventid.trim();
-        console.log(eventid);
         type = JSON.parse(event.body).type.trim();
-        console.log(type);
         comments = JSON.parse(event.body).comments;
-        console.log(type);
         docs = JSON.parse(event.body).docs;
-        console.log(docs);
-        approved = JSON.parse(event.body).approved;
-        console.log(approved);
         mmddyyyy = JSON.parse(event.body).mmddyyyy;
-        console.log(mmddyyyy);
         dateofcompletion = JSON.parse(event.body).dateofcompletion;
-        console.log(dateofcompletion);
         _event = JSON.parse(event.body).event;
         username = JSON.parse(event.body).username;
         userid = JSON.parse(event.body).userid;
@@ -162,12 +152,25 @@ export const processUploadReport = async (event) => {
     }catch(e){
         console.log('error', e);
     }
+    let module = "events";
+    try {
+        module = JSON.parse(event.body).module ?? "events";
+    }catch(e){
+        console.log('error', e);
+    }
+    let percentage = "100";
+    try {
+        percentage = JSON.parse(event.body).percentage ?? "100";
+    }catch(e){
+        console.log('error', e);
+    }
+    let bucketname = processGetModuleBucketname(module);
     let mm = mmddyyyy.split('/')[0]
-    if(_event == null && userid != null && userrole != null && year != null){
+    if(_event == null && userid != null && userrole != null && year != null && module != 'notices'){
         let userFileKey = projectid + '_' + userid + '_' + year + '_' + userrole +'_calendar_job_enc.json'
         
         var command = new GetObjectCommand({
-          Bucket: BUCKET_NAME,
+          Bucket: bucketname,
           Key: userFileKey,
         });
         
@@ -189,7 +192,7 @@ export const processUploadReport = async (event) => {
           console.log('event read err', err);
         }
         for(let calEvent of storedCalendar[mmddyyyy][entityid][locationid]){
-            console.log('stored event', calEvent.id, eventid, userFileKey)
+            // console.log('stored event', calEvent.id, eventid, userFileKey)
             if(calEvent.id == eventid){
                 _event = JSON.stringify(calEvent)
                 break;
@@ -198,18 +201,18 @@ export const processUploadReport = async (event) => {
         
     }
     
-    console.log('event', _event)
+    // console.log('event', _event)
     let flag = false
     let index = 0
     let assReports = {};
     let responseS3;
-    let lastupdatedReports;
+    let lastupdatedReports = "";
     var dbComments = [];
     let data;
     var strDataEncrypt = "";
     while(!flag && index < 5){
         command = new GetObjectCommand({
-          Bucket: BUCKET_NAME,
+          Bucket: bucketname,
           Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",
         });
         
@@ -229,27 +232,43 @@ export const processUploadReport = async (event) => {
         } catch (err) {
           console.error(err); 
         }
-        console.log('last modified', lastupdatedReports)
+        // console.log('last modified', lastupdatedReports)
         
         if(assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] != null) {
             
             var decryptData;
             
-            if(assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid].indexOf("::") >= 0) {
-                
+            if(assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid].indexOf("::") >= 0 && assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid].split('::').length > 2) {
+                console.log('dec ', assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid].split('::').length)
                 decryptData = await processDecryptData(projectid, assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid]);
-                
+                console.log('decrypting 1', projectid, assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid].length, decryptData.length);
             } else {
                 
                 if(KMS_KEY_REGISTER[projectid] != null) {
                     const text = await processKmsDecrypt(projectid, assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid]);
                     decryptData = text.toLowerCase().indexOf('error') >= 0 ? assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] : text;
+                    console.log('decryptdata 2', text)
                 } else {
                     decryptData = assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid]
+                    console.log('decryptdata 3')
                 }
                 
             }
-            dbComments = JSON.parse(decryptData).comments;
+            let flagDoubleEncrypted = false
+            try{
+                dbComments = JSON.parse(decryptData).comments ?? [];
+            }catch(e){
+                console.log('JSON parse error', e)
+                flagDoubleEncrypted = true;
+            }
+            if(flagDoubleEncrypted){
+                try{
+                    dbComments = JSON.parse(await processKmsDecrypt(projectid, decryptData)).comments ?? []
+                }catch(e){
+                    console.log('JSON parse double error', e);
+                    dbComments = []
+                }
+            }
         }
         
         var commentsText = comments + ' (Documents Saved: '+(JSON.parse(docs).length)+')';
@@ -262,6 +281,7 @@ export const processUploadReport = async (event) => {
             comments: dbComments,
             lastupdated: (new Date()).toUTCString(),
             dateofcompletion: dateofcompletion,
+            percentage: percentage,
             event: _event,
             reportformatschema: reportformatschema ?? "",
             reportformatvalues: reportformatvalues ?? ""
@@ -281,7 +301,8 @@ export const processUploadReport = async (event) => {
         
         assReports[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] = strDataEncrypt;
         index++;
-        flag = await processCheckLastModifiedFile(BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",lastupdatedReports)
+        flag = await processCheckLastModifiedFile(BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",lastupdatedReports, bucketname)
+        console.log('flag', flag)
     }
     if(!flag){
         let bodyHtml = "File checking failed for reporting file: " + BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json" + "<br /><br />LastModified:" + lastupdatedReports.toString() + "<br /><br />Input: " + event.body
@@ -291,7 +312,7 @@ export const processUploadReport = async (event) => {
         return response;
     }
     let putCommand = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
+        Bucket: bucketname,
         Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_enc.json",
         Body: JSON.stringify(assReports),
         ContentType: 'application/json'
@@ -299,12 +320,12 @@ export const processUploadReport = async (event) => {
     try {
         await s3Client.send(putCommand);
     } catch (err) {
-      console.log('putCommand err', err); 
+      console.log('putCommand yearly err', err); 
     }
     
     let assReportsMonthly = {};
     command = new GetObjectCommand({
-      Bucket: BUCKET_NAME,
+      Bucket: bucketname,
       Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_" + mm + "_enc.json",
     });
     
@@ -326,7 +347,7 @@ export const processUploadReport = async (event) => {
     assReportsMonthly[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] = strDataEncrypt;
     
     putCommand = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
+        Bucket: bucketname,
         Key: BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_" + mm + "_enc.json",
         Body: JSON.stringify(assReportsMonthly),
         ContentType: 'application/json'
@@ -336,14 +357,18 @@ export const processUploadReport = async (event) => {
     } catch (err) {
       console.log('putCommand err', err); 
     }
-    
-    let makercheckers = JSON.parse(_event)['makercheckers'] == null ? [] : JSON.parse(_event)['makercheckers']; 
     let notifyChange
-    if(makercheckers.length == 0){
-        notifyChange = await processNotifyChange(event["headers"]["Authorization"], data, '/actionalert');
-    }else{
-        console.log("not sending email for auto approved compliance")
+    if(_event != null){
+        let makercheckers = JSON.parse(_event)['makercheckers'] == null ? [] : JSON.parse(_event)['makercheckers']; 
+
+        if(makercheckers.length == 0){
+            notifyChange = await processNotifyChange(event["headers"]["Authorization"], data, '/actionalert');
+        }else{
+            console.log("not sending email for auto approved compliance")
+        }
     }
+
+    await processAddUserLastTime(projectid, userid, 'lastaction')
     // const notifyChange = null;
     
     // command = new GetObjectCommand({
@@ -393,13 +418,13 @@ export const processUploadReport = async (event) => {
     // }
     // if(assReportsMonthly[mmddyyyy + ';' + entityid + ';' + locationid + ';' + eventid] == null){
     //     let bodyHtml = "Upload failed for monthly file: " + BUCKET_FOLDER_REPORTING + '/' + projectid + "_reporting_" + mm + "_enc.json" + "<br /><br />Error:" + monthlyErr.toString() + "<br /><br />Input: " + event.body
-    //     let subject = "Upload Report monthly file failure - " + projectid
+        // let subject = "Upload Report monthly file failure - " + projectid
     //     await processSendEmail('ninad.t@flagggrc.tech, hrushi@flagggrc.tech',subject,'',bodyHtml)
     // }
     
     const response = {statusCode: 200, body: {result: true, notifyChange: notifyChange, event: _event}};
     // const response = {statusCode: 200, body: {result: true, lastModified: lastupdatedReports}};
-    processAddLog('1234', 'upload', event, response, response.statusCode)
+    processAddLog('1234', 'uploadReport', event, response, response.statusCode)
     return response;
 
 }

@@ -1,23 +1,13 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { getSignedUrl, KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE,  AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
+import { getSignedUrl, KMS_KEY_REGISTER, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, BUCKET_NAME, s3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING, EVENTS_LIST_CONCISE_THRESHOLD } from "./globals.mjs";
 import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
 import { processDecryptData } from './decryptdata.mjs';
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-import crypto from 'crypto';
-import { processSendEmail } from './sendemail.mjs'
 import { processAddUserLastTime } from './adduserlasttime.mjs'
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 export const processGetAllCountryEvents = async (event) => {
     
@@ -74,6 +64,7 @@ export const processGetAllCountryEvents = async (event) => {
     var searchstring = null;
     var list = false;
     var month = "00";
+    var fullmmddyyyy = null;
     try {
         projectid = JSON.parse(event.body).projectid.trim();
         entityid = JSON.parse(event.body).entityid.trim();
@@ -105,6 +96,11 @@ export const processGetAllCountryEvents = async (event) => {
         month = (JSON.parse(event.body).month)
     }catch(e){
         month = "00"
+    }
+    try{
+        fullmmddyyyy = (JSON.parse(event.body).mmddyyyy)
+    }catch(e){
+        fullmmddyyyy = null;
     }
     
     console.log('inside processGetAllCountryEvents 1', list);
@@ -437,6 +433,7 @@ export const processGetAllCountryEvents = async (event) => {
     
     let assReports = {};
     let flagMonthlyReportFileNotFound = true;
+    
     if(month != "00"){
         command = new GetObjectCommand({
           Bucket: BUCKET_NAME,
@@ -484,7 +481,8 @@ export const processGetAllCountryEvents = async (event) => {
     }
     
     var arrEvents = {};
-    
+    var arrEventsConcise = {};
+    let totalCount = 0;
     var cnt = exclusivestartkey
     while(cnt < calendarList.length) {
         
@@ -556,6 +554,7 @@ export const processGetAllCountryEvents = async (event) => {
             const mmddyyyy = Object.keys(storedCalendar)[i];
             
             if(mmddyyyy == "00/00") continue;
+            if(fullmmddyyyy != null && mmddyyyy != fullmmddyyyy) continue;
             
             const mm = mmddyyyy.split('/')[0];
             const dd = mmddyyyy.split('/')[1];
@@ -778,17 +777,14 @@ export const processGetAllCountryEvents = async (event) => {
                                                 events[l].documents = JSON.parse(jsonData.docs ?? "[]");
                                                 events[l].comments = jsonData.comments;
                                                 events[l].approved = jsonData.approved;
+                                                events[l].percentage = jsonData.percentage;
                                                 events[l].lastupdated = jsonData.lastupdated;
                                                 events[l].dateofcompletion = jsonData.dateofcompletion;
                                                 
                                                 if(jsonData.event != null) {
                                                     events[l].reportevent = jsonData.event;
                                                 }
-                                                
-                                                if((mmddyyyy + ';' + entity + ';' + locations[j] + ';' + events[l].id) == "11/30/2024;e80f8953-4bde-4fee-b944-311c551e13cd;d9d5935d-ad1a-40be-b390-e6a42d733ccb;e6db6434-5bb8-480b-921d-d084f24dfea2") {
-                                                    // console.log(events[l].comments);
-                                                    console.log('jsonData',jsonData, mmddyyyy)
-                                                }
+                                            
                                             }catch(e){
                                                 events[l].documents = [];
                                                 events[l].comments = [];
@@ -827,6 +823,7 @@ export const processGetAllCountryEvents = async (event) => {
                                                 events[l].documents = JSON.parse(jsonData.docs ?? "[]");
                                                 events[l].comments = jsonData.comments;
                                                 events[l].approved = jsonData.approved;
+                                                events[l].percentage = jsonData.percentage;
                                                 events[l].lastupdated = jsonData.lastupdated;
                                                 events[l].dateofcompletion = jsonData.dateofcompletion;
                                                 if(jsonData.event != null) {
@@ -855,6 +852,9 @@ export const processGetAllCountryEvents = async (event) => {
                                         if(pushFlag) {
                                             if(arrEvents[mm + "/" + dd] == null) {
                                                 arrEvents[mm + "/" + dd] = [];
+                                            }
+                                            if(arrEventsConcise[mm + "/" + dd] == null) {
+                                                arrEventsConcise[mm + "/" + dd] = [];
                                             }
                                             if(list){
                                                 let eventToBePushed = {}
@@ -885,21 +885,43 @@ export const processGetAllCountryEvents = async (event) => {
                                                 if(eventToBePushed['reportformat'] != null && eventToBePushed['reportformat'].length > 0){
                                                     eventToBePushed['docs'] = ['Not Required'];
                                                 }
-                                                //Not Required (ABC Global-MakerChecker);fef0402d-4578-4b9f-ab53-f8404ec5aefb
-                                                //Reporting Fields
-                                                console.log('comments', events[l].comments);
                                                 eventToBePushed['comments'] = []
                                                 for(let eventComment of events[l]['comments'] ?? []){
                                                     eventToBePushed['comments'].push({author: eventComment['author'], timestamp: eventComment['timestamp'], comment: eventComment['comment']})
                                                 }
                                                 eventToBePushed['approved'] = events[l]['approved']
+                                                eventToBePushed['percentage'] = events[l]['percentage']
                                                 eventToBePushed['dateofcompletion'] = events[l]['dateofcompletion']
                                                 eventToBePushed['documents'] = [] 
                                                 for(let eventDocument of events[l]['documents'] ?? []){
                                                     eventToBePushed['documents'].push({key: eventDocument['key'], ext: eventDocument['ext']})
                                                 }
                                                   
-                                                arrEvents[mm + "/" + dd].push(eventToBePushed);    
+                                                arrEvents[mm + "/" + dd].push(eventToBePushed);
+                                                let eventConcise = {}
+                                                eventConcise['id'] = events[l]['id']
+                                                eventConcise['obligationtitle'] = events[l]['obligationtitle']
+                                                eventConcise['locationname'] = events[l]['locationname']
+                                                eventConcise['entityid'] = events[l]['entityid']
+                                                eventConcise['locationid'] = events[l]['locationid']
+                                                eventConcise['duedate'] = events[l]['duedate']
+                                                eventConcise['riskarea'] = events[l]['riskarea']
+                                                eventConcise['risk'] = events[l]['risk']
+                                                eventConcise['functions'] = events[l]['functions']
+                                                eventConcise['obligationtype'] = events[l]['obligationtype']
+                                                eventConcise['jurisdiction'] = events[l]['jurisdiction']
+                                                eventConcise['frequency'] = events[l]['frequency']
+                                                eventConcise['subcategory'] = events[l]['subcategory']
+                                                eventConcise['docs'] = events[l]['docs']
+                                                eventConcise['makercheckers'] = events[l]['makercheckers']
+                                                eventConcise['comments'] = []
+                                                for(let eventComment of events[l]['comments'] ?? []){
+                                                    eventConcise['comments'].push({author: eventComment['author'], timestamp: eventComment['timestamp'], comment: eventComment['comment']})
+                                                }
+                                                eventConcise['approved'] = events[l]['approved']
+                                                eventConcise['percentage'] = events[l]['percentage']
+                                                arrEventsConcise[mm + "/" + dd].push(eventConcise);
+                                                totalCount ++;    
                                             }else{
                                                 if(events[l]['reportformat'] != null && events[l]['reportformat'].length > 0){
                                                     events['docs'] = ['Not Required'];
@@ -935,7 +957,9 @@ export const processGetAllCountryEvents = async (event) => {
     
     const currTs = new Date().getTime();
     const fileKey = projectid + '_' + currTs + '_view_job.json';
-    
+    if(totalCount > EVENTS_LIST_CONCISE_THRESHOLD && fullmmddyyyy == null){
+        arrEvents = arrEventsConcise
+    }
     command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: fileKey,
@@ -966,6 +990,7 @@ export const processGetAllCountryEvents = async (event) => {
     const signedUrlDelete = await getSignedUrl(s3Client, command, { expiresIn: 1800 });
     await processAddUserLastTime(projectid, userprofileid, 'lastactive')
     const response = {statusCode: 200, body: {result: true, signedUrlGet: signedUrlGet, signedUrlDelete: signedUrlDelete, lastEvaluatedKey: cnt === calendarList.length ? null : cnt}};
+    await processAddLog('1234','details', event, response, response.statusCode)
     // const response = {statusCode: 200, body: {result: true, events: arrEvents}};
     return response;
     

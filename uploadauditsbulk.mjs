@@ -1,12 +1,15 @@
 import { processAuthenticate } from './authenticate.mjs';
 import { processAddLog } from './addlog.mjs';
 import { processUploadAudit } from './uploadaudit.mjs';
-import { schedulerClient, CreateScheduleCommand, s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING } from './globals.mjs';
+import { schedulerClient, CreateScheduleCommand, s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING, REPORTING_RETRY_LIMIT } from './globals.mjs';
 import { processNotifyChange } from './notifychange.mjs';
 import { processCheckRequestid } from './checkrequestid.mjs'
 import { newUuidV4 } from './newuuid.mjs'
 import { processEncryptData } from './encryptdata.mjs';
 import { processDecryptData } from './decryptdata.mjs'
+import { processSendEmail } from './sendemail.mjs'
+import { processGetModuleBucketname } from './getmodulebucketname.mjs'
+import { processCheckLastModifiedFile } from './checklastmodifiedfile.mjs'
 import { Buffer } from 'buffer';
 export const processUploadAuditsBulk = async (event) => {
     
@@ -54,38 +57,59 @@ export const processUploadAuditsBulk = async (event) => {
     let bodyArr = JSON.parse(event.body)
     let flagReported = false;
     let projectid = null;
+    let retryattempts = '0';
+    let module = "events";
+    let bucketname = "";
     for( let [i,bodyObj] of bodyArr.entries()){
         projectid = bodyObj.projectid
+        retryattempts = bodyObj.retryattempts ?? '0'
         if(bodyObj.processed != null && bodyObj.processed == true){
             continue;
         }
+        module = "events";
+        try {
+            module = JSON.parse(event.body).module ?? "module";
+        }catch(e){
+            console.log('module error', e)
+        }
+        bucketname = processGetModuleBucketname(module);
         if(i == 0){
-            let getCommand = new GetObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
-            })
-            let responseS3;
+            let lastUpdateBulk;
+            let flagBulk = false;
             let jsonBulkReportsData = {}
-            try{
-                responseS3 = await s3Client.send(getCommand);
-                const s3ResponseStream = responseS3.Body;
-                const chunks = [];
-                for await (const chunk of s3ResponseStream) {
-                    chunks.push(chunk);
+            while(flagBulk == false){
+                let getCommand = new GetObjectCommand({
+                    Bucket: bucketname,
+                    Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
+                })
+                let responseS3;
+                
+                try{
+                    responseS3 = await s3Client.send(getCommand);
+                    const s3ResponseStream = responseS3.Body;
+                    lastUpdateBulk = responseS3.LastModified
+                    const chunks = [];
+                    for await (const chunk of s3ResponseStream) {
+                        chunks.push(chunk);
+                    }
+                    const responseBuffer = Buffer.concat(chunks);
+                    let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
+                    jsonBulkReportsData = JSON.parse(decryptedData);
+                }catch(e){
+                    console.log('read bulk error', e)
+                    flagBulk = false;
                 }
-                const responseBuffer = Buffer.concat(chunks);
-                jsonBulkReportsData = JSON.parse(responseBuffer.toString());
-            }catch(e){
-                console.log('error', e);
-                jsonBulkReportsData = {}
-            }
-            for(let tempObj of bodyArr){
-                let sortid = tempObj.mmddyyyy + ';' + tempObj.entityid + ';' + tempObj.locationid + ';' + tempObj.eventid
-                jsonBulkReportsData[sortid] = tempObj
+                for(let tempObj of bodyArr){
+                    let sortid = tempObj.mmddyyyy + ';' + tempObj.entityid + ';' + tempObj.locationid + ';' + tempObj.eventid
+                    jsonBulkReportsData[sortid] = tempObj
+                }
+                if(!flagBulk){
+                    flagBulk = await processCheckLastModifiedFile(BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",lastUpdateBulk, bucketname)
+                }
             }
             let encryptedData = await processEncryptData(projectid, JSON.stringify(jsonBulkReportsData))
             let putCommand = new PutObjectCommand({
-                Bucket: BUCKET_NAME,
+                Bucket: bucketname,
                 Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
                 Body: encryptedData,
                 ContentType: 'application/json'
@@ -100,6 +124,7 @@ export const processUploadAuditsBulk = async (event) => {
         let tempEvent = event;
         event.body = JSON.stringify(bodyObj);
         let resultUploadAudit = await processUploadAudit(tempEvent);
+        // let resultUploadAudit = {statusCode: new Date().getTime() % 2 == 0 ? 200 : 400, event: {}};
         if(resultUploadAudit.statusCode == 200){
             let _event = resultUploadAudit.body.event
             bodyObj.processed = true;
@@ -112,13 +137,21 @@ export const processUploadAuditsBulk = async (event) => {
             bodyObj.reporters = JSON.parse(_event)['reporters']
             bodyObj.approvers = JSON.parse(_event)['approvers']
             bodyArr[i] = bodyObj;
+        }else{
+            retryattempts  = (parseInt(retryattempts) + 1) + ""
+            bodyArr[i].retryattempts = retryattempts
+            bodyArr[i].statusCode = resultUploadAudit.statusCode
         }
         flagReported = true;
         break;
         
     }
     
-    if(flagReported){
+    if(parseInt(retryattempts) >= REPORTING_RETRY_LIMIT){
+        let bodyHtml = "InputBody: " + JSON.stringify(bodyArr) + "<br /><br />"
+        let subject = "Bulk Audit failed - " + event.requestid
+        await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tec, jomon.j@flagggrc.techh", subject,"", bodyHtml);
+    }else if(flagReported){
     
         let currentTime = new Date().getTime()
         let scheduleDate = new Date(currentTime + 100);
@@ -152,6 +185,16 @@ export const processUploadAuditsBulk = async (event) => {
         let responseSchedule = await schedulerClient.send(scheduleCommand);
         console.log('Job Scheduled', responseSchedule.ScheduleArn)
     }else{
+        for(let tempObj of bodyArr){
+            module = "events";
+            try {
+                module = tempObj.module ?? "module";
+            }catch(e){
+                console.log('module error', e)
+            }
+            bucketname = processGetModuleBucketname(module);
+            break;
+        }
         //dashboard send email call
         let getCommand = new GetObjectCommand({
             Bucket: BUCKET_NAME,

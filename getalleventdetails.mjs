@@ -250,6 +250,7 @@ export const processGetAllEventDetails = async (event) => {
                 events[l].documents = JSON.parse(jsonData.docs ?? "[]");
                 events[l].comments = jsonData.comments;
                 events[l].approved = jsonData.approved;
+                events[l].percentage = jsonData.percentage;
                 events[l].lastupdated = jsonData.lastupdated;
                 events[l].dateofcompletion = jsonData.dateofcompletion;
                 // console.log('jsonData.comments', Object.keys(jsonData), events[l].comments);

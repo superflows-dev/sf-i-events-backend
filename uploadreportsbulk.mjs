@@ -1,16 +1,18 @@
 import { processAuthenticate } from './authenticate.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processUploadReport } from './uploadreport.mjs';
-import { schedulerClient, CreateScheduleCommand, s3Client, PutObjectCommand, GetObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING } from './globals.mjs';
+import { schedulerClient, CreateScheduleCommand, s3Client, PutObjectCommand, GetObjectCommand, BUCKET_FOLDER_REPORTING, REPORTING_RETRY_LIMIT } from './globals.mjs';
 import { processNotifyChange } from './notifychange.mjs';
 import { processCheckRequestid } from './checkrequestid.mjs'
 import { newUuidV4 } from './newuuid.mjs'
 import { processEncryptData } from './encryptdata.mjs';
 import { processDecryptData } from './decryptdata.mjs';
+import { processSendEmail } from './sendemail.mjs'
+import { processGetModuleBucketname } from './getmodulebucketname.mjs'
+import { processCheckLastModifiedFile } from './checklastmodifiedfile.mjs'
 import { Buffer } from 'buffer';
 export const processUploadReportsBulk = async (event) => {
     
-    console.log('processing upload', event.body);
+    // console.log('processing upload', event.body);
     let flagRequest = await processCheckRequestid(event.requestid)
     if(!flagRequest){
         console.log('returning uploadBulk');
@@ -54,38 +56,60 @@ export const processUploadReportsBulk = async (event) => {
     let bodyArr = JSON.parse(event.body)
     let flagReported = false;
     let projectid = null;
+    let retryattempts = '0';
+    let module = "events";
+    let bucketname = "";
     for( let [i,bodyObj] of bodyArr.entries()){
         projectid = bodyObj.projectid
+        retryattempts = bodyObj.retryattempts ?? '0'
         if(bodyObj.processed != null && bodyObj.processed == true){
             continue;
         }
+        module = "events";
+        try {
+            module = JSON.parse(event.body).module ?? "module";
+        }catch(e){
+            console.log('module error', e)
+        }
+        bucketname = processGetModuleBucketname(module);
         if(i == 0){
-            let getCommand = new GetObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
-            })
-            let responseS3;
+            let lastUpdateBulk;
+            let flagBulk = false;
             let jsonBulkReportsData = {}
-            try{
-                responseS3 = await s3Client.send(getCommand);
-                const s3ResponseStream = responseS3.Body;
-                const chunks = [];
-                for await (const chunk of s3ResponseStream) {
-                    chunks.push(chunk);
+            while(flagBulk == false){
+                let getCommand = new GetObjectCommand({
+                    Bucket: bucketname,
+                    Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
+                })
+                let responseS3;
+                
+                try{
+                    responseS3 = await s3Client.send(getCommand);
+                    const s3ResponseStream = responseS3.Body;
+                    lastUpdateBulk = responseS3.LastModified
+                    const chunks = [];
+                    for await (const chunk of s3ResponseStream) {
+                        chunks.push(chunk);
+                    }
+                    const responseBuffer = Buffer.concat(chunks);
+                    let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
+                    jsonBulkReportsData = JSON.parse(decryptedData);
+                }catch(e){
+                    console.log('read bulk error', e)
+                    flagBulk = true;
                 }
-                const responseBuffer = Buffer.concat(chunks);
-                jsonBulkReportsData = JSON.parse(responseBuffer.toString());
-            }catch(e){
-                console.log('error', e);
-                jsonBulkReportsData = {}
+                for(let tempObj of bodyArr){
+                    let sortid = tempObj.mmddyyyy + ';' + tempObj.entityid + ';' + tempObj.locationid + ';' + tempObj.eventid
+                    jsonBulkReportsData[sortid] = tempObj
+                }
+                if(!flagBulk){
+                    flagBulk = await processCheckLastModifiedFile(BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",lastUpdateBulk, bucketname)
+                }
             }
-            for(let tempObj of bodyArr){
-                let sortid = tempObj.mmddyyyy + ';' + tempObj.entityid + ';' + tempObj.locationid + ';' + tempObj.eventid
-                jsonBulkReportsData[sortid] = tempObj
-            }
+            console.log('jsonBulkReportsData', Object.keys(jsonBulkReportsData))
             let encryptedData = await processEncryptData(projectid, JSON.stringify(jsonBulkReportsData))
             let putCommand = new PutObjectCommand({
-                Bucket: BUCKET_NAME,
+                Bucket: bucketname,
                 Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
                 Body: encryptedData,
                 ContentType: 'application/json'
@@ -98,7 +122,7 @@ export const processUploadReportsBulk = async (event) => {
             }
         }
         let tempEvent = event;
-        event.body = JSON.stringify(bodyObj);
+        tempEvent.body = JSON.stringify(bodyObj);
         let resultUploadReport = await processUploadReport(tempEvent);
         if(resultUploadReport.statusCode == 200){
         let _event = resultUploadReport.body.event
@@ -112,13 +136,21 @@ export const processUploadReportsBulk = async (event) => {
             bodyObj.reporters = JSON.parse(_event)['reporters']
             bodyObj.approvers = JSON.parse(_event)['approvers']
             bodyArr[i] = bodyObj;
+        }else{
+            retryattempts  = (parseInt(retryattempts) + 1) + ""
+            bodyArr[i].retryattempts = retryattempts
+            bodyArr[i].statusCode = resultUploadReport.statusCode
         }
         flagReported = true;
         break;
         
     }
     let notifyChange;
-    if(flagReported){
+    if(parseInt(retryattempts) >= REPORTING_RETRY_LIMIT){
+        let bodyHtml = "InputBody: " + JSON.stringify(bodyArr) + "<br /><br />"
+        let subject = "Bulk Report failed - " + event.requestid
+        await processSendEmail("ninad.t@flagggrc.tech, hrushi@flagggrc.tech, jomon.j@flagggrc.tech", subject,"", bodyHtml);
+    }else if(flagReported){
     
         let currentTime = new Date().getTime()
         let scheduleDate = new Date(currentTime + 21000);
@@ -149,12 +181,22 @@ export const processUploadReportsBulk = async (event) => {
         };
         
         const scheduleCommand = new CreateScheduleCommand(input);
-        let responseSchedule = await schedulerClient.send(scheduleCommand);
-        console.log('Job Scheduled', responseSchedule.ScheduleArn)
+        await schedulerClient.send(scheduleCommand);
+        // console.log('Job Scheduled', responseSchedule.ScheduleArn)
     }else{
+        for(let tempObj of bodyArr){
+            module = "events";
+            try {
+                module = tempObj.module ?? "module";
+            }catch(e){
+                console.log('module error', e)
+            }
+            bucketname = processGetModuleBucketname(module);
+            break;
+        }
         //dashboard send email call
         let getCommand = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucketname,
             Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
         })
         let responseS3;
@@ -179,7 +221,7 @@ export const processUploadReportsBulk = async (event) => {
         }
         let encryptedData = await processEncryptData(projectid, JSON.stringify(jsonBulkReportsData))
         let putCommand = new PutObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucketname,
             Key: BUCKET_FOLDER_REPORTING + '/bulk_' + projectid + "_reports_enc.json",
             Body: encryptedData,
             ContentType: 'application/json'
@@ -194,7 +236,7 @@ export const processUploadReportsBulk = async (event) => {
     }
     
     const response = {statusCode: 200, body: {result: true, notifychange: notifyChange}};
-    processAddLog('1234', 'uploadBulk', event, response, response.statusCode)
+    // processAddLog('1234', 'uploadBulk', event, response, response.statusCode)
     return response;
 
 }
