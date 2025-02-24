@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "nodemailer": "^6.9.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "eslint": "^9.21.0",
+    "eslint-plugin-node": "^11.1.0",
+    "globals": "^16.0.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  }
+}
