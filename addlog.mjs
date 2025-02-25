@@ -1,4 +1,4 @@
-
+import { PutObjectCommand, s3Client, BUCKET_NAME } from "./globals.mjs";
 export const processAddLog = async (userId, op, req, resp, httpCode, delta = null) => {
     
     // a client can be shared by different commands.
