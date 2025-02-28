@@ -1,18 +1,10 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, TABLE_RCM_JOBS } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ddbClient, PutItemCommand, TABLE_RCM_JOBS } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+import { Buffer } from 'buffer'
 
 export const processCreateRcmJob = async (event) => {
     
@@ -59,8 +51,6 @@ export const processCreateRcmJob = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var complianceid = null;
@@ -70,6 +60,7 @@ export const processCreateRcmJob = async (event) => {
         complianceid = JSON.parse(event.body).complianceid.trim();
         data = JSON.parse(event.body).data;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -110,7 +101,7 @@ export const processCreateRcmJob = async (event) => {
         }
     };
     
-    var resultPut = await ddbPut(setParams);
+    await ddbPut(setParams);
     
     const response = {statusCode: 200, body: {result: true}};
     return response;

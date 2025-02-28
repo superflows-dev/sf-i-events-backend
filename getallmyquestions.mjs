@@ -1,23 +1,10 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, BUCKET_NAME, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG } from "./globals.mjs";
+import { s3Client, GetObjectCommand, BUCKET_NAME } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-
+import { Buffer } from 'buffer'
 
 export const processGetAllMyQuestions = async (event) => {
     
@@ -52,8 +39,6 @@ export const processGetAllMyQuestions = async (event) => {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var projectid = null;
@@ -67,6 +52,7 @@ export const processGetAllMyQuestions = async (event) => {
         role = JSON.parse(event.body).role.trim();
         year = JSON.parse(event.body).year.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -89,9 +75,6 @@ export const processGetAllMyQuestions = async (event) => {
        // processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
     }
-    
-    
-    const calendarList = [];
     
     let userFileKey = projectid + '_' + userprofileid + '_' + year + '_' + role +'_calendar_job_enc.json'
     let flagUserFileNotFound = false;

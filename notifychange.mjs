@@ -3,7 +3,7 @@ import { NOTIFY_REGION, NOTIFY_API } from "./globals.mjs";
 
 export const processNotifyChange = async (authorization, body, path) => {
   
-  let myPromise = new Promise(function(resolve, reject) {
+  let myPromise = new Promise(function(resolve) {
     
     var options = {
        host: NOTIFY_API + '.lambda-url.' + NOTIFY_REGION + '.on.aws',

@@ -1,25 +1,10 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { getSignedUrl, KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG } from "./globals.mjs";
-import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
-import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
+import { getSignedUrl, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR,  BUCKET_NAME, s3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-    
+import { Buffer } from 'buffer'
 
 export const processGetAllFunctionEvents = async (event) => {
     
@@ -56,8 +41,6 @@ export const processGetAllFunctionEvents = async (event) => {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var projectid = null;
@@ -80,6 +63,7 @@ export const processGetAllFunctionEvents = async (event) => {
         selectedCountry = JSON.parse(event.body).country ?? "";
         selectedStatute = JSON.parse(event.body).statute ?? "";
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -265,7 +249,7 @@ export const processGetAllFunctionEvents = async (event) => {
             }
         }else{
             if(searchstring != null && searchstring != ""){
-                for(var j = 0; j < Object.keys(storedDB[country]).length; j++) {
+                for(j = 0; j < Object.keys(storedDB[country]).length; j++) {
                 
                     const statute = Object.keys(storedDB[country])[j];
                     if(arrEvents[country] == null) {
@@ -275,13 +259,13 @@ export const processGetAllFunctionEvents = async (event) => {
                     if(arrEvents[country][statute] == null) {
                         arrEvents[country][statute] = {};
                     }
-                    for(var k = 0; k < Object.keys(storedDB[country][statute]).length; k++) {
+                    for(k = 0; k < Object.keys(storedDB[country][statute]).length; k++) {
                     
                         const complianceId = Object.keys(storedDB[country][statute])[k];
                         
                         const arrCompliances = storedDB[country][statute][complianceId];
                     
-                        for(var l = 0; l < arrCompliances.length; l++) {
+                        for(l = 0; l < arrCompliances.length; l++) {
                             
                             const compliance = arrCompliances[l];
                         
@@ -304,7 +288,7 @@ export const processGetAllFunctionEvents = async (event) => {
                             const auditors = compliance.auditors;
                             const viewers = compliance.viewers;
                             
-                            var push = false;
+                            push = false;
                             
                             if(role == ROLE_REPORTER) {
                                 if(JSON.stringify(reporters).indexOf(userprofileid) >= 0) {
@@ -372,13 +356,13 @@ export const processGetAllFunctionEvents = async (event) => {
                     }
                 }
             }else{
-                for(var k = 0; k < Object.keys(storedDB[selectedCountry][selectedStatute]).length; k++) {
+                for(k = 0; k < Object.keys(storedDB[selectedCountry][selectedStatute]).length; k++) {
                     
                     const complianceId = Object.keys(storedDB[selectedCountry][selectedStatute])[k];
                     
                     const arrCompliances = storedDB[selectedCountry][selectedStatute][complianceId];
                 
-                    for(var l = 0; l < arrCompliances.length; l++) {
+                    for(l = 0; l < arrCompliances.length; l++) {
                         
                         const compliance = arrCompliances[l];
                     
@@ -401,7 +385,7 @@ export const processGetAllFunctionEvents = async (event) => {
                         const auditors = compliance.auditors;
                         const viewers = compliance.viewers;
                         
-                        var push = false;
+                        push = false;
                         
                         if(role == ROLE_REPORTER) {
                             if(JSON.stringify(reporters).indexOf(userprofileid) >= 0) {

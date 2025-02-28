@@ -1,11 +1,9 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE, TABLE_C, TABLE_CAL, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, UpdateItemCommand, SERVER_KEY, ADMIN_METHODS, TABLE_RCM_JOBS } from "./globals.mjs";
+import { TABLE_CAL, ddbClient, QueryCommand, SERVER_KEY } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from 'buffer'
 
 function sleep(ms) {
   return new Promise((resolve) => { 
@@ -14,9 +12,6 @@ function sleep(ms) {
 }
 
 export const processGetRcmCalendarEvents = async (event) => {
-    
-    var serverkey = "";
-    var userId = "1234"
     
     if((event["headers"]["x-server-key"]) != null) {
         
@@ -72,8 +67,6 @@ export const processGetRcmCalendarEvents = async (event) => {
         //         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
         //     }   
         // }
-        
-        userId = authResult.userId;
     
     }
     
@@ -84,6 +77,7 @@ export const processGetRcmCalendarEvents = async (event) => {
     try {
         projectid = JSON.parse(event.body).projectid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -123,6 +117,7 @@ export const processGetRcmCalendarEvents = async (event) => {
         } catch (err) {
             sleep(2000);
             await ddbQuerySerial(queryParams, exclusiveStartKey);
+            console.log(err);
             //return err;
         }
     };

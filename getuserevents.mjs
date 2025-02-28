@@ -1,11 +1,10 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_REPORTER, ROLE_APPROVER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_REPORTER, ROLE_APPROVER, TABLE,ddbClient, GetItemCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
+import { Buffer } from 'buffer'
 
 export const processGetUserEvents = async (event) => {
     
@@ -52,7 +51,6 @@ export const processGetUserEvents = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -66,6 +64,7 @@ export const processGetUserEvents = async (event) => {
         userprofileid = JSON.parse(event.body).userprofileid.trim();
         role = JSON.parse(event.body).role.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

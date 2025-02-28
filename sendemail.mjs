@@ -5,8 +5,8 @@ export const processSendEmail = async (to, subject, body, bodyHTML, addBcc = fal
             port: 587,
             secure: false, // true for 465, false for other ports
             auth: {
-              user: process.env.SMTP_USERNAME,
-              pass: process.env.SMTP_PASSWORD, // Passed in via the YAML
+              user: process.env.SMTP_USERNAME, // eslint-disable-line no-undef
+              pass: process.env.SMTP_PASSWORD, // eslint-disable-line no-undef
             },
     });
       

@@ -1,10 +1,9 @@
 // getunmappedevents (projectid)
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_C, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, QueryCommand } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE_C, ddbClient, ScanCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
+import { Buffer } from 'buffer'
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -61,8 +60,6 @@ export const processGetMappedProjects = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
-    
     //const userId = "1234";
     
     var complianceid = null;
@@ -70,6 +67,7 @@ export const processGetMappedProjects = async (event) => {
     try {
         complianceid = JSON.parse(event.body).complianceid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -112,6 +110,7 @@ export const processGetMappedProjects = async (event) => {
         } catch (err) {
             await sleep(2000);
             ddbQuerySerial(queryParams, exclusiveStartKey);
+            console.log(err);
             // return err;
         }
     };
@@ -120,5 +119,4 @@ export const processGetMappedProjects = async (event) => {
     const response = {statusCode: 200, body: {result: true, data: arrSerial}};
     return response;
     
-
 }

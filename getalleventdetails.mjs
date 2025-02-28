@@ -1,22 +1,11 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { getSignedUrl, KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
-import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
+import { KMS_KEY_REGISTER, BUCKET_NAME, s3Client, GetObjectCommand, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
 import { processDecryptData } from './decryptdata.mjs';
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import crypto from 'crypto';
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+import { Buffer } from 'buffer'
 
 export const processGetAllEventDetails = async (event) => {
     
@@ -52,8 +41,6 @@ export const processGetAllEventDetails = async (event) => {
     if(!authResult.result) {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
-    
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -277,12 +264,4 @@ export const processGetAllEventDetails = async (event) => {
     // const response = {statusCode: 200, body: {result: true, events: arrEvents}};
     return response;
     
-}
-function isJsonString(str) {
-    try {
-        JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
 }

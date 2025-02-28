@@ -1,7 +1,7 @@
 import { processAuthenticate } from './authenticate.mjs'
-import { BUCKET_NAME, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, s3Client, KMS_KEY_REGISTER, getSignedUrl, BUCKET_FOLDER_REPORTING } from './globals.mjs'
+import { BUCKET_NAME, GetObjectCommand, s3Client, BUCKET_FOLDER_REPORTING } from './globals.mjs'
 import { processDecryptData } from './decryptdata.mjs'
-
+import { Buffer } from 'buffer'
 export const processGetBulkReportJobs = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -39,6 +39,7 @@ export const processGetBulkReportJobs = async (event) => {
     try {
         projectid = JSON.parse(event.body).projectid;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         return response;
     }
@@ -116,6 +117,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log(e);
         return false;
     }
     return true;

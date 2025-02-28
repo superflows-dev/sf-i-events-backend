@@ -6,7 +6,7 @@ import { processEncryptData } from './encryptdata.mjs';
 import { processDecryptData } from './decryptdata.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
 import { processAuthenticate } from './authenticate.mjs';
-
+import { Buffer } from 'buffer'
 export const processMigrateReporting = async (event) => {
     
     console.log('processing reporting migration', event.body);
@@ -241,6 +241,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log('isJsonString', e);
         return false;
     }
     return true;

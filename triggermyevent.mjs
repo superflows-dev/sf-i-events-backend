@@ -1,12 +1,9 @@
 // mapevent (events[], users[])
 
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, FINCAL_START_MONTH, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, UpdateItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, TIMEFRAME_BEFORE, TIMEFRAME_AFTER } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processNotifyChange } from './notifychange.mjs';
-
+import { Buffer } from "buffer";
 export const processTriggerMyEvent = async (event) => {
     
     console.log('triggerevent');
@@ -50,7 +47,6 @@ export const processTriggerMyEvent = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -78,6 +74,7 @@ export const processTriggerMyEvent = async (event) => {
         statute = JSON.parse(event.body).statute.trim();
         subcategory = JSON.parse(event.body).subcategory.trim();
     } catch (e) {
+        console.log('error',e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

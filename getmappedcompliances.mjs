@@ -1,20 +1,10 @@
 // getunmappedevents (projectid)
 
-import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE_S, TABLE_C, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, BUCKET_NAME, s3Client } from "./globals.mjs";
+import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE_S, ddbClient, GetItemCommand, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, BUCKET_NAME, s3Client } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
-import { processEncryptData } from './encryptdata.mjs'
-
-async function sleep(ms) {
-  return new Promise((resolve) => { 
-    setTimeout(resolve, ms);
-  });
-}
-
+import { Buffer } from 'buffer'
 export const processGetMappedCompliances = async (event) => {
      
     console.log('getting mapped compliances');
@@ -64,8 +54,6 @@ export const processGetMappedCompliances = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var projectid = null;
@@ -75,6 +63,7 @@ export const processGetMappedCompliances = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         complianceid = JSON.parse(event.body).complianceid;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -202,7 +191,7 @@ export const processGetMappedCompliances = async (event) => {
         
         if(complianceid != null) {
     
-            for(var i = 0; i < jsoncompliancesmapping.mappings.length; i++) {
+            for(i = 0; i < jsoncompliancesmapping.mappings.length; i++) {
                 
                 if(jsoncompliancesmapping.mappings[i].id == complianceid) {
                     found = jsoncompliancesmapping.mappings[i].selected;
@@ -281,9 +270,7 @@ export const processGetMappedCompliances = async (event) => {
         
         if(Object.keys(arrSerial).length > 0) {
             
-            const mappings = [];
-        
-            for(var i = 0; i < jsoncompliancesmapping.mappings.length; i++) {
+            for(i = 0; i < jsoncompliancesmapping.mappings.length; i++) {
                 
                 const id = jsoncompliancesmapping.mappings[i].id;
                 
@@ -306,7 +293,7 @@ export const processGetMappedCompliances = async (event) => {
         
                     cols = Object.keys(JSON.parse(arrSerial[projectid + ';' + id][max].data.S));
                     
-                    for(var j = 0; j < cols.length; j++) {
+                    for(j = 0; j < cols.length; j++) {
                         data.push(JSON.parse(arrSerial[projectid + ';' + id][max].data.S)[cols[j]])
                     }
                     jsoncompliancesmapping.mappings[i].data = JSON.stringify(data);

@@ -1,12 +1,10 @@
 // getcalendar (projectid)
 
-
-import { REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS } from "./globals.mjs";
+import {  PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
+import { Buffer } from 'buffer'
 function isNumeric(str) { 
   if (typeof str != "string") return false // we only process strings!  
   return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
@@ -112,7 +110,7 @@ const pushEvent = (arrEvents, mmddyyyy, item, contractStartDate) => {
     
     var jsonCompliance = {};
     
-    for(var i = 0; i < jsonCols.length; i++) {
+    for(i = 0; i < jsonCols.length; i++) {
         jsonCompliance[jsonCols[i]] = jsonData1[i];
     }
     
@@ -251,7 +249,7 @@ const pushEventTag = (arrTagsEvents, mmddyyyy, item, contractStartDate) => {
     for(var k = 0 ; k < item.tagsonly.length; k++){
         // console.log('item tag', item.tagsonly[i])
         const tagArr = item.tagsonly[k].split(";")
-        const tagName = tagArr[0]
+        // const tagName = tagArr[0]
         const tagId = tagArr[1]
         
         if(arrTagsEvents[tagId] == null) {
@@ -291,7 +289,7 @@ const pushEventTag = (arrTagsEvents, mmddyyyy, item, contractStartDate) => {
         
         var jsonCompliance = {};
         
-        for(var i = 0; i < jsonCols.length; i++) {
+        for(i = 0; i < jsonCols.length; i++) {
             jsonCompliance[jsonCols[i]] = jsonData1[i];
         }
         
@@ -424,6 +422,7 @@ async function getObjectData (projectid, onboardingstep) {
         jsonData.mappings = jsonContent;
         
     } catch (err) {
+        console.error(err);
       flagEncryptedNotFound = true
     }
     
@@ -435,7 +434,6 @@ async function getObjectData (projectid, onboardingstep) {
         
         responseS3;
         jsonData = {};
-        let flagEncryptedNotFound = false
         try {
             const response = await s3Client.send(command);
             const s3ResponseStream = response.Body; 
@@ -448,7 +446,7 @@ async function getObjectData (projectid, onboardingstep) {
             jsonData.mappings = jsonContent;
             
         } catch (err) {
-            
+            console.error(err);
         }
     }
     
@@ -601,7 +599,7 @@ function generateTagManifest(eventData) {
             let tagArr = tag.split(";")
             let tagName = tagArr[0]
             let tagId = tagArr[1]
-            let tagType = tagArr[2]
+            // let tagType = tagArr[2]
             if(manifest[tagId] == null){
                 manifest[tagId] = {}
             }
@@ -645,7 +643,6 @@ export const processGetCalendar = async (event) => {
     if(!authResult.result) {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
-    const userId = authResult.userId;
     
     var projectid = null;
     var returnasis = null;
@@ -658,6 +655,7 @@ export const processGetCalendar = async (event) => {
         year = JSON.parse(event.body).year;
         contractstartdate = JSON.parse(event.body).contractstartdate;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -700,6 +698,7 @@ export const processGetCalendar = async (event) => {
                 jsonCal = jsonContent;
                 
             } catch (err) {
+                console.error(err);
               flagEncryptedNotFound = true
             }
             
@@ -723,7 +722,7 @@ export const processGetCalendar = async (event) => {
                     jsonCal = jsonContent;
                     
                 } catch (err) {
-                    
+                    console.error(err);
                 }
             }
             const response = {statusCode: 200, body: {result: true, data: jsonCal}};
@@ -741,19 +740,17 @@ export const processGetCalendar = async (event) => {
         return response;
     }
     let encryptedData = await processEncryptData(projectid, JSON.stringify(manifest.id))
-    var command = new PutObjectCommand({
+    command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: projectid + '_manifest_id_calendar_job_enc.json',
       Body: encryptedData,
       ContentType: 'application/json'
     });
     
-    var responseS3;
-    
     try {
-      responseS3 = await s3Client.send(command);
+        await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
+        console.error(err);
     }
     encryptedData = await processEncryptData(projectid, JSON.stringify(manifest.name))
     command = new PutObjectCommand({
@@ -782,20 +779,17 @@ export const processGetCalendar = async (event) => {
         return response;
     }
     encryptedData = await processEncryptData(projectid, JSON.stringify(manifestTags.id))
-    var command = new PutObjectCommand({
+    command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: projectid + '_tags_manifest_id_calendar_job_enc.json',
       Body: encryptedData,
       ContentType: 'application/json'
     });
     
-    var responseS3;
-    
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
-    
+      console.error(err);
     }
     encryptedData = await processEncryptData(projectid, JSON.stringify(manifestTags.name))
     command = new PutObjectCommand({
@@ -1118,7 +1112,7 @@ export const processGetCalendar = async (event) => {
                 
             } else {
                 
-                var arrDueDate = arrDuedates[j].split('/');
+                arrDueDate = arrDuedates[j].split('/');
             
                 
                 if(arrDueDate.length != 3) {
@@ -1233,7 +1227,7 @@ export const processGetCalendar = async (event) => {
         
         
         var statute = "";
-        for(var j = 0; j < jsonCols.length; j++) {
+        for(j = 0; j < jsonCols.length; j++) {
             if(jsonCols[j] == "statute") {
                 statute = (jsonDat[j] + "").trim();
             }
@@ -1260,7 +1254,7 @@ export const processGetCalendar = async (event) => {
         
         const key = Object.keys(arrEvents)[i];
         encryptedData = await processEncryptData(projectid, JSON.stringify(arrEvents[key]))
-        var command = new PutObjectCommand({
+        command = new PutObjectCommand({
           Bucket: BUCKET_NAME,
           Key: projectid + '_' + key + '_' + year + '_calendar_job_enc.json',
           Body: encryptedData,
@@ -1341,19 +1335,19 @@ export const processGetCalendar = async (event) => {
             
             const mmddyyyy = Object.keys(arrEvents[location])[n];
         
-            for(var j = 0; j < Object.keys(arrEvents[location][mmddyyyy]).length; j++) {
+            for(j = 0; j < Object.keys(arrEvents[location][mmddyyyy]).length; j++) {
                 
                 const entityid = Object.keys(arrEvents[location][mmddyyyy])[j];
                 
                 if(entityid.length != 36) continue;
                 
                 console.log('entityid', entityid, 'length',Object.keys(arrEvents[location][mmddyyyy][entityid]).length)
-                for(var k = 0; k < Object.keys(arrEvents[location][mmddyyyy][entityid]).length; k++) {
+                for(k = 0; k < Object.keys(arrEvents[location][mmddyyyy][entityid]).length; k++) {
                     
                     const locationid = Object.keys(arrEvents[location][mmddyyyy][entityid])[k];
                     
                     if(locationid.length != 36) continue; 
-                    for(var l = 0; l < arrEvents[location][mmddyyyy][entityid][locationid].length; l++) {
+                    for(l = 0; l < arrEvents[location][mmddyyyy][entityid][locationid].length; l++) {
                         
                         const ev = arrEvents[location][mmddyyyy][entityid][locationid][l];
                         const countryid = ev.countryid;
@@ -1369,21 +1363,21 @@ export const processGetCalendar = async (event) => {
                             
                         }
                         
-                        for(var m = 0; m < ev.approvers.length; m++) {
+                        for(m = 0; m < ev.approvers.length; m++) {
                             
                             const approverid = ev.approvers[m].split(';')[1];
                             usermap = pushUser(usermap, approverid, 'approver', countryid, countryname, entityid, entityname, locationid, locationname, tags);
                             
                         }
                         
-                        for(var m = 0; m < ev.functionheads.length; m++) {
+                        for(m = 0; m < ev.functionheads.length; m++) {
                             
                             const functionheadid = ev.functionheads[m].split(';')[1];
                             usermap = pushUser(usermap, functionheadid, 'functionhead', countryid, countryname, entityid, entityname, locationid, locationname, tags);
                             
                         }
                         
-                        for(var m = 0; m < ev.auditors.length; m++) {
+                        for(m = 0; m < ev.auditors.length; m++) {
                             
                             // console.log('auditors', ev.auditors, projectid);
                             const auditorid = ev.auditors[m].split(';')[1];
@@ -1391,7 +1385,7 @@ export const processGetCalendar = async (event) => {
                             
                         }
                         
-                        for(var m = 0; m < ev.viewers.length; m++) {
+                        for(m = 0; m < ev.viewers.length; m++) {
                             
                             const viewersid = ev.viewers[m].split(';')[1];
                             usermap = pushUser(usermap, viewersid, 'viewers', countryid, countryname, entityid, entityname, locationid, locationname, tags);
@@ -1408,19 +1402,17 @@ export const processGetCalendar = async (event) => {
         
     }
     encryptedData = await processEncryptData(projectid, JSON.stringify(usermap))
-    var command = new PutObjectCommand({
+    command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: projectid + '_usermap_job.json',
       Body: encryptedData,
       ContentType: 'application/json'
     });
     
-    var responseS3;
-    
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
+        console.log('error', err)
     }
     
     const response = {statusCode: 200, body: {result: true, usermap: usermap}};

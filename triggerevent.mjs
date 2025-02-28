@@ -1,14 +1,14 @@
 // mapevent (events[], users[])
 
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, UpdateItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, TIMEFRAME_BEFORE, TIMEFRAME_AFTER, BUCKET_NAME, s3Client, PutObjectCommand, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, schedulerClient, CreateScheduleCommand } from "./globals.mjs";
+import { BUCKET_NAME, s3Client, PutObjectCommand, GetObjectCommand, schedulerClient, CreateScheduleCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-import { processGetCalendar } from './getcalendar.mjs';
 import { processNotifyChange } from './notifychange.mjs';
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
+import { Buffer } from "buffer";
 export const processTriggerEvent = async (event) => {
     
     console.log('triggerevent');
@@ -130,7 +130,7 @@ export const processTriggerEvent = async (event) => {
             const remarks = trigger.remarks;
             
             const triggerDate = trigger.dateOfTrigger;
-            const triggerTs = new Date(triggerDate.split('/')[2], triggerDate.split('/')[1], triggerDate.split('/')[0]);
+            // const triggerTs = new Date(triggerDate.split('/')[2], triggerDate.split('/')[1], triggerDate.split('/')[0]);
             
             const occurrenceDate = trigger.dateOfOccurrence;
             const occurrenceTs = new Date(occurrenceDate);
@@ -170,7 +170,6 @@ export const processTriggerEvent = async (event) => {
             };
             
             // console.log('triggerObj', triggerObj);
-            var count = 0;
             
             for(var k = 0; k < storedMapping.length; k++) { 
                 
@@ -180,15 +179,14 @@ export const processTriggerEvent = async (event) => {
                         
                         if(storedMapping[k].triggers != null && storedMapping[k].triggers != "") {
                             
-                            if(storedMapping[k].triggers.indexOf(triggerId) >= 0) {
-                            } else {
+                            if(storedMapping[k].triggers.indexOf(triggerId) < 0) {
                                 var newArr = JSON.parse(storedMapping[k].triggers);
                                 newArr.push(triggerObj);
                                 storedMapping[k].triggers = JSON.stringify(newArr);
                             }
                             
                         } else {
-                            var newArr = [];
+                            newArr = [];
                             newArr.push(triggerObj)
                             storedMapping[k].triggers = JSON.stringify(newArr);
                         }
@@ -203,15 +201,14 @@ export const processTriggerEvent = async (event) => {
                         
                         if(storedMapping[k].triggers != null && storedMapping[k].triggers != "") {
                             
-                            if(storedMapping[k].triggers.indexOf(triggerId) >= 0) {
-                            } else {
-                                var newArr = JSON.parse(storedMapping[k].triggers);
+                            if(storedMapping[k].triggers.indexOf(triggerId) < 0) {
+                                newArr = JSON.parse(storedMapping[k].triggers);
                                 newArr.push(triggerObj);
                                 storedMapping[k].triggers = JSON.stringify(newArr);
                             }
                             
                         } else {
-                            var newArr = [];
+                            newArr = [];
                             newArr.push(triggerObj)
                             storedMapping[k].triggers = JSON.stringify(newArr);
                         }
@@ -227,15 +224,14 @@ export const processTriggerEvent = async (event) => {
                         
                         if(storedMapping[k].triggers != null && storedMapping[k].triggers != "") {
                             
-                            if(storedMapping[k].triggers.indexOf(triggerId) >= 0) {
-                            } else {
-                                var newArr = JSON.parse(storedMapping[k].triggers);
+                            if(storedMapping[k].triggers.indexOf(triggerId) < 0) {
+                                newArr = JSON.parse(storedMapping[k].triggers);
                                 newArr.push(triggerObj);
                                 storedMapping[k].triggers = JSON.stringify(newArr);
                             }
                             
                         } else {
-                            var newArr = [];
+                            newArr = [];
                             newArr.push(triggerObj)
                             storedMapping[k].triggers = JSON.stringify(newArr);
                         }
@@ -310,15 +306,14 @@ export const processTriggerEvent = async (event) => {
                         if(flagFound){
                             if(storedMapping[k].triggers != null && storedMapping[k].triggers != "") {
                                 
-                                if(storedMapping[k].triggers.indexOf(triggerId) >= 0) {
-                                } else {
-                                    var newArr = JSON.parse(storedMapping[k].triggers);
+                                if(storedMapping[k].triggers.indexOf(triggerId) < 0) {
+                                    newArr = JSON.parse(storedMapping[k].triggers);
                                     newArr.push(triggerObj);
                                     storedMapping[k].triggers = JSON.stringify(newArr);
                                 }
                                 
                             } else {
-                                var newArr = [];
+                                newArr = [];
                                 newArr.push(triggerObj)
                                 storedMapping[k].triggers = JSON.stringify(newArr);
                             }
@@ -331,8 +326,6 @@ export const processTriggerEvent = async (event) => {
                         
                     }
                 }
-                
-                count++;
                 
             }
             

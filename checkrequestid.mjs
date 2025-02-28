@@ -1,4 +1,5 @@
 import { PutObjectCommand, s3Client, BUCKET_NAME, GetObjectCommand, RANDOM_NUMBER_MAX_LIMIT } from "./globals.mjs";
+import { Buffer } from 'buffer'
 export const processCheckRequestid = async (requestid) => {
     console.log('checking', requestid)
     if(requestid == null){

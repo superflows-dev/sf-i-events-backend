@@ -1,7 +1,7 @@
 // getunmappedevents (projectid)
 
 import { kmsClient, EncryptCommand, KMS_KEY_REGISTER } from "./globals.mjs";
-
+import { Buffer } from 'buffer'
 export const processKmsEncrypt = async (projectid, plaintext) => {
     
     // const input = {

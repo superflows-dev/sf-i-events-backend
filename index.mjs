@@ -59,7 +59,7 @@ import { processUploadExtract } from './uploadextract.mjs';
 import { processDdbPut } from './ddbput.mjs';
 import { processDdbQuery } from './ddbquery.mjs';
 import { processDdbQueryPaginated } from './ddbquerypaginated.mjs';
-import { processAddLog } from './addlog.mjs';
+// import { processAddLog } from './addlog.mjs';
 import { ENTITY_NAME } from './globals.mjs';
 import { processGetDecryptedJson } from './getdecryptedjson.mjs';
 import { processScheduleGetCalendarJob } from './schedulegetcalendarjob.mjs'
@@ -142,519 +142,588 @@ export const handler = async (event, context, callback) => {
     switch(path) {
       
         case "/"+ENTITY_NAME+"/mapevents":
-        case "/mapevents":
+        case "/mapevents": {
           const resultMapEvents = await processMapEvents(event);
           response.body = JSON.stringify(resultMapEvents.body);
           response.statusCode = resultMapEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/triggerevent":
-        case "/triggerevent":
+        case "/triggerevent":{
           const resultTriggerEvent = await processTriggerEvent(event);
           response.body = JSON.stringify(resultTriggerEvent.body);
           response.statusCode = resultTriggerEvent.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/triggermyevent":
-        case "/triggermyevent":
+        case "/triggermyevent":{
           const resultTriggerMyEvent = await processTriggerMyEvent(event);
           response.body = JSON.stringify(resultTriggerMyEvent.body);
           response.statusCode = resultTriggerMyEvent.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/untriggermyevent":
-        case "/untriggermyevent":
+        case "/untriggermyevent":{
           const resultUnTriggerMyEvent = await processUnTriggerMyEvent(event);
           response.body = JSON.stringify(resultUnTriggerMyEvent.body);
           response.statusCode = resultUnTriggerMyEvent.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/reprogramtrigger":
-        case "/reprogramtrigger":
+        case "/reprogramtrigger":{
           const resultReprogramTrigger = await processReprogramTrigger(event);
           response.body = JSON.stringify(resultReprogramTrigger.body);
           response.statusCode = resultReprogramTrigger.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/untriggerevent":
-        case "/untriggerevent":
+        case "/untriggerevent":{
           const resultUnTriggerEvent = await processUnTriggerEvent(event);
           response.body = JSON.stringify(resultUnTriggerEvent.body);
           response.statusCode = resultUnTriggerEvent.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getcalendar":
-        case "/getcalendar":
+        case "/getcalendar":{
           const resultGetCalendar = await processGetCalendar(event);
           response.body = JSON.stringify(resultGetCalendar.body);
           response.statusCode = resultGetCalendar.statusCode;
-        break;
+          break;
+}
         case "/"+ENTITY_NAME+"/getcalendaruser":
-        case "/getcalendaruser":
+        case "/getcalendaruser":{
           const resultGetCalendarUser = await processGetCalendarUser(event);
           response.body = JSON.stringify(resultGetCalendarUser.body);
           response.statusCode = resultGetCalendarUser.statusCode;
-        break;
+          break;
+}
         case "/"+ENTITY_NAME+"/generateusermap":
-        case "/generateusermap":
+        case "/generateusermap":{
           const resultGenerateUserMap = await processGenerateUserMap(event);
           response.body = JSON.stringify(resultGenerateUserMap.body);
           response.statusCode = resultGenerateUserMap.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getcalendartrigger":
-        case "/getcalendartrigger":
+        case "/getcalendartrigger":{
           const resultGetCalendarTrigger = await processGetCalendarTrigger(event);
           response.body = JSON.stringify(resultGetCalendarTrigger.body);
           response.statusCode = resultGetCalendarTrigger.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getcalendarregister":
-        case "/getcalendarregister":
+        case "/getcalendarregister":{
           const resultGetCalendarRegister = await processGetCalendarRegister(event);
           response.body = JSON.stringify(resultGetCalendarRegister.body);
           response.statusCode = resultGetCalendarRegister.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/synccalendar":
-        case "/synccalendar":
+        case "/synccalendar":{
           const resultSyncCalendar = await processSyncCalendar(event);
           response.body = JSON.stringify(resultSyncCalendar.body);
           response.statusCode = resultSyncCalendar.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getstoredmapping":
-        case "/getstoredmapping":
+        case "/getstoredmapping":{
           const resultGetStoredMapping = await processGetStoredMapping(event);
           response.body = JSON.stringify(resultGetStoredMapping.body);
           response.statusCode = resultGetStoredMapping.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getjobdata":
-        case "/getjobdata":
+        case "/getjobdata":{
           const resultGetJobData = await processGetJobData(event);
           response.body = JSON.stringify(resultGetJobData.body);
           response.statusCode = resultGetJobData.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getreportingstatus":
-        case "/getreportingstatus":
+        case "/getreportingstatus":{
           const resultGetReportingStatus = await processGetReportingStatus(event);
           response.body = JSON.stringify(resultGetReportingStatus.body);
           response.statusCode = resultGetReportingStatus.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getonboardingstatus":
-        case "/getonboardingstatus":
+        case "/getonboardingstatus":{
           const resultGetOnboardingStatus = await processGetOnboardingStatus(event);
           response.body = JSON.stringify(resultGetOnboardingStatus.body);
           response.statusCode = resultGetOnboardingStatus.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getmappedonboarding":
-        case "/getmappedonboarding":
+        case "/getmappedonboarding":{
           const resultGetMappedOnboarding = await processGetMappedOnboarding(event);
           response.body = JSON.stringify(resultGetMappedOnboarding.body);
           response.statusCode = resultGetMappedOnboarding.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getcalendarjobs":
-        case "/getcalendarjobs":
+        case "/getcalendarjobs":{
           const resultGetCalendarJobs = await processGetCalendarJobs(event);
           response.body = JSON.stringify(resultGetCalendarJobs.body);
           response.statusCode = resultGetCalendarJobs.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/cancelonboardingjob":
-        case "/cancelonboardingjob":
+        case "/cancelonboardingjob":{
           const resultCancelOnboardingJob = await processCancelOnboardingJob(event);
           response.body = JSON.stringify(resultCancelOnboardingJob.body);
           response.statusCode = resultCancelOnboardingJob.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getrcmjobs":
-        case "/getrcmjobs":
+        case "/getrcmjobs":{
           const resultGetRcmJobs = await processGetRcmJobs(event);
           response.body = JSON.stringify(resultGetRcmJobs.body);
           response.statusCode = resultGetRcmJobs.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getrcmreadyjobs":
-        case "/getrcmreadyjobs":
+        case "/getrcmreadyjobs":{
           const resultGetRcmReadyJobs = await processGetRcmReadyJobs(event);
           response.body = JSON.stringify(resultGetRcmReadyJobs.body);
           response.statusCode = resultGetRcmReadyJobs.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getrcmcompletedjobs":
-        case "/getrcmcompletedjobs":
+        case "/getrcmcompletedjobs":{
           const resultGetRcmCompletedJobs = await processGetRcmCompletedJobs(event);
           response.body = JSON.stringify(resultGetRcmCompletedJobs.body);
           response.statusCode = resultGetRcmCompletedJobs.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/creatercmjob":
-        case "/creatercmjob":
+        case "/creatercmjob":{
           const resultCreateRcmJob = await processCreateRcmJob(event);
           response.body = JSON.stringify(resultCreateRcmJob.body);
           response.statusCode = resultCreateRcmJob.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatercmjob":
-        case "/updatercmjob":
+        case "/updatercmjob":{
           const resultUpdateRcmJob = await processUpdateRcmJob(event);
           response.body = JSON.stringify(resultUpdateRcmJob.body);
           response.statusCode = resultUpdateRcmJob.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatesignoff":
-        case "/updatesignoff":
+        case "/updatesignoff":{
           const resultUpdateSignoff = await processUpdateSignoff(event);
           response.body = JSON.stringify(resultUpdateSignoff.body);
           response.statusCode = resultUpdateSignoff.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getsignoff":
-        case "/getsignoff":
+        case "/getsignoff":{
           const resultGetSignoff = await processGetSignoff(event);
           response.body = JSON.stringify(resultGetSignoff.body);
           response.statusCode = resultGetSignoff.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatercmlock":
-        case "/updatercmlock":
+        case "/updatercmlock":{
           const resultUpdateRcmLock = await processUpdateRcmLock(event);
           response.body = JSON.stringify(resultUpdateRcmLock.body);
           response.statusCode = resultUpdateRcmLock.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatercmcompliance":
-        case "/updatercmcompliance":
+        case "/updatercmcompliance":{
           const resultUpdateRcmCompliance = await processUpdateRcmCompliance(event);
           response.body = JSON.stringify(resultUpdateRcmCompliance.body);
           response.statusCode = resultUpdateRcmCompliance.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatercmcalendar":
-        case "/updatercmcalendar":
+        case "/updatercmcalendar":{
           const resultUpdateRcmCalendar = await processUpdateRcmCalendar(event);
           response.body = JSON.stringify(resultUpdateRcmCalendar.body);
           response.statusCode = resultUpdateRcmCalendar.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatercmnotifications":
-        case "/updatercmnotifications":
+        case "/updatercmnotifications":{
           const resultUpdateRcmNotifications = await processUpdateRcmNotifications(event);
           response.body = JSON.stringify(resultUpdateRcmNotifications.body);
           response.statusCode = resultUpdateRcmNotifications.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getallmyevents":
-        case "/getallmyevents":
+        case "/getallmyevents":{
           const resultGetAllMyEvents = await processGetAllMyEvents(event);
           response.body = JSON.stringify(resultGetAllMyEvents.body);
           response.statusCode = resultGetAllMyEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getallcountryevents":
-        case "/getallcountryevents":
-          console.log('before getallcountryevents');
+        case "/getallcountryevents":{
           const resultGetAllCountryEvents = await processGetAllCountryEvents(event);
           response.body = JSON.stringify(resultGetAllCountryEvents.body);
           response.statusCode = resultGetAllCountryEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/compileallcountryevents":
-        case "/compileallcountryevents":
-          console.log('before compileallcountryevents');
+        case "/compileallcountryevents":{
           const resultCompileAllCountryEvents = await processCompileAllCountryEvents(event);
           response.body = JSON.stringify(resultCompileAllCountryEvents.body);
           response.statusCode = resultCompileAllCountryEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getnextuserevents":
-        case "/getnextuserevents":
-          console.log('before getallcountryevents');
+        case "/getnextuserevents":{
           const resultGetNextUserEvents = await processGetNextUserEvents(event);
           response.body = JSON.stringify(resultGetNextUserEvents.body);
           response.statusCode = resultGetNextUserEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getallfunctionevents":
-        case "/getallfunctionevents":
-          // deprecated
+        case "/getallfunctionevents":{
           const resultGetAllFunctionEvents = await processGetAllFunctionEvents(event);
           response.body = JSON.stringify(resultGetAllFunctionEvents.body);
           response.statusCode = resultGetAllFunctionEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getmappedstatutes":
-        case "/getmappedstatutes":
+        case "/getmappedstatutes":{
           const resultGetMappedStatutes = await processGetMappedStatutes(event);
           response.body = JSON.stringify(resultGetMappedStatutes.body);
           response.statusCode = resultGetMappedStatutes.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getmappedcompliances":
-        case "/getmappedcompliances":
+        case "/getmappedcompliances":{
           const resultGetMappedCompliances = await processGetMappedCompliances(event);
           response.body = JSON.stringify(resultGetMappedCompliances.body);
           response.statusCode = resultGetMappedCompliances.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getmappedprojects":
-        case "/getmappedprojects":
+        case "/getmappedprojects":{
           const resultGetMappedProjects = await processGetMappedProjects(event);
           response.body = JSON.stringify(resultGetMappedProjects.body);
           response.statusCode = resultGetMappedProjects.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getrcmcalendarevents":
-        case "/getrcmcalendarevents":
+        case "/getrcmcalendarevents":{
           const resultGetRcmCalendarEvents = await processGetRcmCalendarEvents(event);
           response.body = JSON.stringify(resultGetRcmCalendarEvents.body);
           response.statusCode = resultGetRcmCalendarEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getrcmnotifications":
-        case "/getrcmnotifications":
+        case "/getrcmnotifications":{
           const resultGetRcmNotifications = await processGetRcmNotifications(event);
           response.body = JSON.stringify(resultGetRcmNotifications.body);
           response.statusCode = resultGetRcmNotifications.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getrcmlockedcompliances":
-        case "/getrcmlockedcompliances":
+        case "/getrcmlockedcompliances":{
           const resultGetRcmLockedCompliances = await processGetRcmLockedCompliances(event);
           response.body = JSON.stringify(resultGetRcmLockedCompliances.body);
           response.statusCode = resultGetRcmLockedCompliances.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getmappedserializedonboarding":
-        case "/getmappedserializedonboarding":
+        case "/getmappedserializedonboarding":{
           const resultGetMappedSerializedOnboarding = await processGetMappedSerializedOnboarding(event);
           response.body = JSON.stringify(resultGetMappedSerializedOnboarding.body);
           response.statusCode = resultGetMappedSerializedOnboarding.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatemappedstatutes":
-        case "/updatemappedstatutes":
+        case "/updatemappedstatutes":{
           const resultUpdateMappedStatutes = await processUpdateMappedStatutes(event);
           response.body = JSON.stringify(resultUpdateMappedStatutes.body);
           response.statusCode = resultUpdateMappedStatutes.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatemappedonboarding":
-        case "/updatemappedonboarding":
+        case "/updatemappedonboarding":{
           const resultUpdateMappedOnboarding = await processUpdateMappedOnboarding(event);
           response.body = JSON.stringify(resultUpdateMappedOnboarding.body);
           response.statusCode = resultUpdateMappedOnboarding.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatemappedcompliances":
-        case "/updatemappedcompliances":
+        case "/updatemappedcompliances":{
           const resultUpdateMappedCompliances = await processUpdateMappedCompliances(event);
           response.body = JSON.stringify(resultUpdateMappedCompliances.body);
           response.statusCode = resultUpdateMappedCompliances.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getunmappedevents":
-        case "/getunmappedevents":
+        case "/getunmappedevents":{
           const resultGetUnmappedEvents = await processGetUnmappedEvents(event);
           response.body = JSON.stringify(resultGetUnmappedEvents.body);
           response.statusCode = resultGetUnmappedEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getuserevents":
-        case "/getuserevents":
+        case "/getuserevents":{
           const resultGetUserEvents = await processGetUserEvents(event);
           response.body = JSON.stringify(resultGetUserEvents.body);
           response.statusCode = resultGetUserEvents.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/ddbput":
-        case "/ddbput":
+        case "/ddbput":{
           const resultDdbPut = await processDdbPut(event);
           response.body = JSON.stringify(resultDdbPut.body);
           response.statusCode = resultDdbPut.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/ddbquery":
-        case "/ddbquery":
+        case "/ddbquery":{
           const resultDdbQuery = await processDdbQuery(event);
           response.body = JSON.stringify(resultDdbQuery.body);
           response.statusCode = resultDdbQuery.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/ddbquerypaginated":
-        case "/ddbquerypaginated":
+        case "/ddbquerypaginated":{
           const resultDdbQueryPaginated = await processDdbQueryPaginated(event);
           response.body = JSON.stringify(resultDdbQueryPaginated.body);
           response.statusCode = resultDdbQueryPaginated.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/deleteeventmappings":
-        case "/deleteeventmappings":
+        case "/deleteeventmappings":{
           const resultDeleteEventMappings = await processDeleteEventMappings(event);
           response.body = JSON.stringify(resultDeleteEventMappings.body);
           response.statusCode = resultDeleteEventMappings.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/upload":
-        case "/upload":
+        case "/upload":{
           const resultUpload = await processUpload(event);
           response.body = JSON.stringify(resultUpload.body);
           response.statusCode = resultUpload.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadreport":
-        case "/uploadreport":
+        case "/uploadreport":{
           const resultUploadReport = await processUploadReport(event);
           response.body = JSON.stringify(resultUploadReport.body);
           response.statusCode = resultUploadReport.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadreportsbulk":
-        case "/uploadreportsbulk":
+        case "/uploadreportsbulk":{
           const resultUploadReportsBulk = await processUploadReportsBulk(event);
           response.body = JSON.stringify(resultUploadReportsBulk.body);
           response.statusCode = resultUploadReportsBulk.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadreview":
-        case "/uploadreview":
+        case "/uploadreview":{
           const resultUploadReview = await processUploadReview(event);
           response.body = JSON.stringify(resultUploadReview.body);
           response.statusCode = resultUploadReview.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadreviewsbulk":
-        case "/uploadreviewsbulk":
+        case "/uploadreviewsbulk":{
           const resultUploadReviewsBulk = await processUploadReviewsBulk(event);
           console.log('response', resultUploadReviewsBulk)
           response.body = JSON.stringify(resultUploadReviewsBulk.body);
           response.statusCode = resultUploadReviewsBulk.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadreportsreviewsbulk":
-        case "/uploadreportsreviewsbulk":
+        case "/uploadreportsreviewsbulk":{
           const resultUploadReportsReviewsBulk = await processUploadReportsReviewsBulk(event);
           console.log('response', resultUploadReportsReviewsBulk)
           response.body = JSON.stringify(resultUploadReportsReviewsBulk.body);
           response.statusCode = resultUploadReportsReviewsBulk.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/deletereview":
-        case "/deletereview":
+        case "/deletereview":{
           const resultDeleteReview = await processDeleteReview(event);
           response.body = JSON.stringify(resultDeleteReview.body);
           response.statusCode = resultDeleteReview.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadaudit":
-        case "/uploadaudit":
+        case "/uploadaudit":{
           const resultUploadAudit = await processUploadAudit(event);
           response.body = JSON.stringify(resultUploadAudit.body);
           response.statusCode = resultUploadAudit.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/uploadauditsbulk":
-        case "/uploadauditsbulk":
+        case "/uploadauditsbulk":{
           const resultUploadAuditsBulk = await processUploadAuditsBulk(event);
           response.body = JSON.stringify(resultUploadAuditsBulk.body);
           response.statusCode = resultUploadAuditsBulk.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getdecryptedjson":
-        case "/getdecryptedjson":
+        case "/getdecryptedjson":{
           const resultGetDecryptedJson = await processGetDecryptedJson(event);
           response.body = JSON.stringify(resultGetDecryptedJson.body);
           response.statusCode = resultGetDecryptedJson.statusCode;
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/schedulegetcalendarjob":
-        case "/schedulegetcalendarjob":
+        case "/schedulegetcalendarjob":{
           const responseScheduleGetCalendarJob = await processScheduleGetCalendarJob(event);
           response.body = JSON.stringify(responseScheduleGetCalendarJob.body)
           response.statusCode = responseScheduleGetCalendarJob.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getreports":
-        case "/getreports":
+        case "/getreports":{
           const responseGetReports = await processGetReports(event);
           response.body = JSON.stringify(responseGetReports.body)
           response.statusCode = responseGetReports.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/updatereportdate":
-        case "/updatereportdate":
+        case "/updatereportdate":{
           const responseUpdateReportDate = await processUpdateReportDate(event);
           response.body = JSON.stringify(responseUpdateReportDate.body)
           response.statusCode = responseUpdateReportDate.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getalleventdetails":
-        case "/getalleventdetails":
+        case "/getalleventdetails":{
           const responseGetAllEventDetails = await processGetAllEventDetails(event);
           response.body = JSON.stringify(responseGetAllEventDetails.body)
           response.statusCode = responseGetAllEventDetails.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/migratereporting":
-        case "/migratereporting":
+        case "/migratereporting":{
           const responseMigrateReporting = await processMigrateReporting(event);
           response.body = JSON.stringify(responseMigrateReporting.body)
           response.statusCode = responseMigrateReporting.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getallmyquestions":
-        case "/getallmyquestions":
+        case "/getallmyquestions":{
           const responseGetAllMyQuestions = await processGetAllMyQuestions(event);
           response.body = JSON.stringify(responseGetAllMyQuestions.body)
           response.statusCode = responseGetAllMyQuestions.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/copyreportingtomonhtly":
-        case "/copyreportingtomonhtly":
+        case "/copyreportingtomonhtly":{
           const responseCopyReportingToMonthly = await processCopyReportingToMonthly(event);
           response.body = JSON.stringify(responseCopyReportingToMonthly.body)
           response.statusCode = responseCopyReportingToMonthly.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getbulkreportjobs":
-        case "/getbulkreportjobs":
+        case "/getbulkreportjobs":{
           const responseGetBulkReportJobs = await processGetBulkReportJobs(event);
           response.body = JSON.stringify(responseGetBulkReportJobs.body)
           response.statusCode = responseGetBulkReportJobs.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/reconcilereporting":
-        case "/reconcilereporting":
+        case "/reconcilereporting":{
           const responseReconcileReporting = await processReconcileReporting(event);
           response.body = JSON.stringify(responseReconcileReporting.body)
           response.statusCode = responseReconcileReporting.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/reconcilesinglereport":
-        case "/reconcilesinglereport":
+        case "/reconcilesinglereport":{
           const responseReconcileSingleReport = await processReconcileSingleReport(event);
           response.body = JSON.stringify(responseReconcileSingleReport.body)
           response.statusCode = responseReconcileSingleReport.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/generatestatistics":
-        case "/generatestatistics":
+        case "/generatestatistics":{
           const responseGenerateStatistics = await processGenerateStatistics(event);
           response.body = JSON.stringify(responseGenerateStatistics.body)
           response.statusCode = responseGenerateStatistics.statusCode
-        break;
+          break;
+}
         
         case "/"+ENTITY_NAME+"/getstatistics":
-        case "/getstatistics":
+        case "/getstatistics":{
           const responseGetStatistics = await processGetStatistics(event);
           response.body = JSON.stringify(responseGetStatistics.body)
           response.statusCode = responseGetStatistics.statusCode
-        break;
+          break;
+}
         
     }
     

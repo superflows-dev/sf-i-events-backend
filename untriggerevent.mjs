@@ -1,15 +1,12 @@
 // mapevent (events[], users[])
 
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, UpdateItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, TIMEFRAME_BEFORE, TIMEFRAME_AFTER, BUCKET_NAME, s3Client, PutObjectCommand, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, schedulerClient, CreateScheduleCommand } from "./globals.mjs";
+import { BUCKET_NAME, s3Client, PutObjectCommand, GetObjectCommand, schedulerClient, CreateScheduleCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-import { processGetCalendar } from './getcalendar.mjs';
-import { processNotifyChange } from './notifychange.mjs';
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
-
+import { Buffer } from "buffer";
 export const processUnTriggerEvent = async (event) => {
     
     console.log('untriggerevent');
@@ -56,6 +53,7 @@ export const processUnTriggerEvent = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         triggerid = JSON.parse(event.body).triggerid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -78,7 +76,6 @@ export const processUnTriggerEvent = async (event) => {
       Bucket: BUCKET_NAME,
       Key: projectid + '_triggers_job_enc.json',
     });
-    let flagEncryptedNotFound = false
     var responseS3;
     var storedMapping = null;
     
@@ -96,7 +93,6 @@ export const processUnTriggerEvent = async (event) => {
         
     } catch (err) {
       console.error(err); 
-      flagEncryptedNotFound = true
     }  
     
     console.log('storedMapping size', storedMapping.length);
@@ -110,9 +106,7 @@ export const processUnTriggerEvent = async (event) => {
             const newTriggers = [];
             console.log('arrTriggers', arrTriggers);
             for(var l = 0; l < arrTriggers.length; l++) {
-                if(arrTriggers[l].triggerId == triggerid) {
-                    
-                } else {
+                if(arrTriggers[l].triggerId != triggerid) {
                     newTriggers.push(arrTriggers[l]);
                 }
             }

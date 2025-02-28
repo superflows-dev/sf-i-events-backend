@@ -1,58 +1,63 @@
 import https from 'https';
 import { AUTH_REGION, AUTH_API, PutObjectCommand, s3Client, BUCKET_NAME, GetObjectCommand, RANDOM_NUMBER_MAX_LIMIT } from "./globals.mjs";
-
+import { Buffer } from 'buffer'
 export const processAuthenticate = async (authorization) => {
   
-  let myPromise = new Promise(async function(resolve, reject) {
-    let randomNumber = Math.floor(Math.random() * (RANDOM_NUMBER_MAX_LIMIT + 1));
-    console.log('random Number', randomNumber)
-    if(randomNumber % RANDOM_NUMBER_MAX_LIMIT == 0){
-      console.log('cleaning storage')
-      await cleanTokenStorage();
-    }
-    let localTokenResponse = await checkTokenInStorage(authorization);
-    if(localTokenResponse != null){
-      resolve(localTokenResponse);
-      return;
-    }
-    var options = {
-       host: AUTH_API + '.lambda-url.' + AUTH_REGION + '.on.aws',
-       port: 443,
-       method: 'POST',
-       path: '/validate',
-       headers: {
-          'Authorization': authorization
-       }   
-    };
-    
-    // console.log(options);
-    
-    //this is the call
-    var request = https.get(options, function(response){
-      let data = '';
-      response.on('data', (chunk) => {
-          data = data + chunk.toString();
-      });
-    
-      response.on('end', async () => {
-          const body = JSON.parse(data);
-          console.log('success', body);
-          await addTokenToStorage(authorization, body);
-          resolve(body)
-      });
-    })
-    
-    request.on('error', error => {
-      console.log('error', error)
-      resolve(error);
-    })
-    
-    request.end()
-    
+  let myPromise = new Promise(function(resolve) { // es-lint-disable-line no-asyn-promise-executor
+    authenticateUser(authorization, resolve)
   });
   
   return myPromise;
 
+}
+
+async function authenticateUser (authorization, resolve) {
+  let randomNumber = Math.floor(Math.random() * (RANDOM_NUMBER_MAX_LIMIT + 1));
+  console.log('random Number', randomNumber)
+  if(randomNumber % RANDOM_NUMBER_MAX_LIMIT == 0){
+    console.log('cleaning storage')
+    await cleanTokenStorage();
+  }
+  let localTokenResponse = await checkTokenInStorage(authorization);
+  if(localTokenResponse != null){
+    resolve(localTokenResponse);
+    return;
+  }
+  var options = {
+      host: AUTH_API + '.lambda-url.' + AUTH_REGION + '.on.aws',
+      port: 443,
+      method: 'POST',
+      path: '/validate',
+      headers: {
+        'Authorization': authorization
+      }   
+  };
+  
+  // console.log(options);
+  
+  //this is the call
+  var request = https.get(options, function(response){
+    let data = '';
+    response.on('data', (chunk) => {
+        data = data + chunk.toString();
+    });
+  
+    response.on('end', async () => {
+        const body = JSON.parse(data);
+        console.log('success', body);
+        await addTokenToStorage(authorization, body);
+        resolve(body)
+    });
+  })
+  
+  request.on('error', error => {
+    console.log('error', error)
+    resolve(error);
+  })
+  
+  request.end()
+    
+  
 }
 
 async function checkTokenInStorage (authorization) {

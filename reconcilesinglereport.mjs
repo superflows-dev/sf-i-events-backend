@@ -1,9 +1,7 @@
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { ROLE_CLIENTADMIN, ROLE_CLIENTCOORD, ROLE_CLIENTSPOC, s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING, KMS_KEY_REGISTER } from './globals.mjs'
-import { processDecryptData } from './decryptdata.mjs';
-import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processEncryptData } from './encryptdata.mjs';
+import { ROLE_CLIENTADMIN, ROLE_CLIENTCOORD, ROLE_CLIENTSPOC, s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING } from './globals.mjs'
+import { Buffer } from 'buffer'
 export const processReconcileSingleReport = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -55,6 +53,7 @@ export const processReconcileSingleReport = async (event) => {
         mmddyyyy = JSON.parse(event.body).mmddyyyy.trim();
         yeartomonth = JSON.parse(event.body).yeartomonth.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

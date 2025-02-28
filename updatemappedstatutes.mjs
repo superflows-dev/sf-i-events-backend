@@ -1,14 +1,13 @@
 // getunmappedevents (projectid)
 
-import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_S, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS, PutObjectCommand } from "./globals.mjs";
+import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE, TABLE_S, ddbClient, UpdateItemCommand, GetItemCommand, PutItemCommand, BUCKET_NAME, s3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand } from "./globals.mjs";
 import { processStoreMapping } from './storemapping.mjs';
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
 import { processEncryptData } from './encryptdata.mjs'
 import { processDecryptData } from './decryptdata.mjs'
-
+import { Buffer } from "buffer";
 export const processUpdateMappedStatutes = async (event) => {
     
     console.log('getting mapped statutes');
@@ -57,7 +56,6 @@ export const processUpdateMappedStatutes = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -72,6 +70,7 @@ export const processUpdateMappedStatutes = async (event) => {
         presigned = JSON.parse(event.body).presigned;
         key = JSON.parse(event.body).key;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -87,7 +86,7 @@ export const processUpdateMappedStatutes = async (event) => {
     
         const fileKey = projectid + '_' + (new Date().getTime()) + '_statutes_job.json';
         
-        const command = new PutObjectCommand({
+        var command = new PutObjectCommand({
           Bucket: BUCKET_NAME,
           Key: fileKey,
         //   Body: data,
@@ -115,7 +114,7 @@ export const processUpdateMappedStatutes = async (event) => {
     
     var data = null;
     
-    var command = new GetObjectCommand({
+    command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
     });
@@ -172,8 +171,6 @@ export const processUpdateMappedStatutes = async (event) => {
         
     }
     
-    var resultUpdate;
-    
     var resultCompare = null;
     
     if(resultGet.Item == null) {
@@ -197,16 +194,16 @@ export const processUpdateMappedStatutes = async (event) => {
             }
         };
         
-        const resultPut = await ddbPut();
+        await ddbPut();
         let encryptedData = await processEncryptData(projectid, JSON.stringify(jsonData.mappings))
-        var command = new PutObjectCommand({
+        command = new PutObjectCommand({
           Bucket: BUCKET_NAME,
           Key: projectid + '_statutes_job_enc.json',
           Body: encryptedData,
           ContentType: 'application/json'
         });
         
-        var responseS3;
+        responseS3;
         
         try {
           responseS3 = await s3Client.send(command);
@@ -220,7 +217,7 @@ export const processUpdateMappedStatutes = async (event) => {
         
         if(resultGet.Item.statutesmapping == null) {
             let encryptedData = await processEncryptData(projectid, JSON.stringify(jsonData.mappings))
-            var command = new PutObjectCommand({
+            command = new PutObjectCommand({
               Bucket: BUCKET_NAME,
               Key: projectid + '_statutes_job_enc.json',
               Body: encryptedData,
@@ -245,12 +242,12 @@ export const processUpdateMappedStatutes = async (event) => {
             const rxArr = jsonData.mappings;
             var dbArr = null; 
             
-            var command = new GetObjectCommand({
+            command = new GetObjectCommand({
               Bucket: BUCKET_NAME,
               Key: projectid + '_statutes_job_enc.json',
             });
             
-            var responseS3;
+            responseS3;
             let flagReadError = false
             try {
                 const response = await s3Client.send(command);
@@ -267,7 +264,7 @@ export const processUpdateMappedStatutes = async (event) => {
               flagReadError = true;
             }
             if(flagReadError){
-                var command = new GetObjectCommand({
+                command = new GetObjectCommand({
                   Bucket: BUCKET_NAME,
                   Key: projectid + '_statutes_job.json',
                 });
@@ -364,7 +361,7 @@ export const processUpdateMappedStatutes = async (event) => {
             
             const newDbArr = [];
             
-            for(var i = 0; i < rxArr.length; i++) {
+            for(i = 0; i < rxArr.length; i++) {
                 
                 newDbArr.push(rxArr[i]);
                 
@@ -375,8 +372,8 @@ export const processUpdateMappedStatutes = async (event) => {
                 for(i = 0; i < dbArr.length; i++) {
                     
                     const idDb = dbArr[i].id;
-                    var found = false;
-                    for(var j = 0; j < rxArr.length; j++) {
+                    found = false;
+                    for(j = 0; j < rxArr.length; j++) {
                         const idRx = rxArr[j].id;   
                         if(idDb == idRx) {
                             found = true;
@@ -399,13 +396,11 @@ export const processUpdateMappedStatutes = async (event) => {
               ContentType: 'application/json'
             });
             
-            var responseS3;
-            
             try {
-              responseS3 = await s3Client.send(command);
+              await s3Client.send(command);
               console.log(response);
             } catch (err) {
-              responseS3 = err;
+              console.log(err);
               console.error(err);
             }
             
@@ -421,11 +416,11 @@ export const processUpdateMappedStatutes = async (event) => {
     
     compliancessearchstring = '';
     
-    var copyE = jsonDataCopy.mappings;
+    // var copyE = jsonDataCopy.mappings;
         
     for(i = 0; i < jsonDataCopy.mappings.length; i++) {
         
-        copyE = (JSON.parse(jsonDataCopy.mappings[i].selected));
+        // copyE = (JSON.parse(jsonDataCopy.mappings[i].selected));
         
         if(JSON.parse(jsonDataCopy.mappings[i].selected)) {
             
@@ -467,7 +462,7 @@ export const processUpdateMappedStatutes = async (event) => {
         }
     };
   
-    resultUpdate = await ddbUpdate();
+    await ddbUpdate();
     
     updateParams = {
         TableName: TABLE,
@@ -483,7 +478,7 @@ export const processUpdateMappedStatutes = async (event) => {
         }
     };
     
-    resultUpdate = await ddbUpdate();
+    await ddbUpdate();
     
     const deleteCommand = new DeleteObjectCommand ({
       "Bucket": BUCKET_NAME,
@@ -493,6 +488,7 @@ export const processUpdateMappedStatutes = async (event) => {
     try {
         await s3Client.send(deleteCommand);
     } catch (err) {
+        console.log(err);
     }
     
     const response = {statusCode: 200, body: {result: true, resultCompare: resultCompare}};

@@ -1,11 +1,9 @@
 // getunmappedevents (projectid)
 
-import { NUM_ONBOARDING_BACKUPS, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_COU, TABLE_LOC, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, DeleteItemCommand, QueryCommand, TABLE_COU_JOBS, PutObjectCommand, BUCKET_NAME, s3Client} from "./globals.mjs";
+import { GetObjectCommand, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, BUCKET_NAME, s3Client} from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import { processSfIEventsAddToQueueSfCalendar } from './addtoqueuesfcalendar.mjs'
+import { Buffer } from 'buffer'
 
 export const processGetStoredMapping = async (event) => {
     
@@ -53,7 +51,6 @@ export const processGetStoredMapping = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     var projectid = null;
     var flow = null;
@@ -62,6 +59,7 @@ export const processGetStoredMapping = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         flow = JSON.parse(event.body).flow.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

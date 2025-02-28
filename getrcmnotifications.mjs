@@ -1,22 +1,12 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE, TABLE_RCM_NOTIF, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, UpdateItemCommand, ADMIN_METHODS,  SERVER_KEY } from "./globals.mjs";
+import { TABLE_RCM_NOTIF, ddbClient, GetItemCommand, UpdateItemCommand, SERVER_KEY } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
+import { Buffer } from 'buffer'
 
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 export const processGetRcmNotifications = async (event) => {
-    
-    var serverkey = "";
-    var userId = "1234"
     
     if((event["headers"]["x-server-key"]) != null) {
         
@@ -73,7 +63,6 @@ export const processGetRcmNotifications = async (event) => {
         //     }   
         // }
         
-        userId = authResult.userId;
     
     }
     
@@ -84,6 +73,7 @@ export const processGetRcmNotifications = async (event) => {
     try {
         projectid = JSON.parse(event.body).projectid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -155,7 +145,7 @@ export const processGetRcmNotifications = async (event) => {
         }
     };
     
-    var resultUpdate = await ddbUpdate(setParams);
+    await ddbUpdate(setParams);
     
     
     const response = {statusCode: 200, body: {result: true, data: newNotif}};

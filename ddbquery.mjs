@@ -1,12 +1,6 @@
 // getunmappedevents (projectid)
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, QueryCommand, ADMIN_METHODS, FINCAL_START_MONTH, UpdateItemCommand, SERVER_KEY } from "./globals.mjs";
-import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import * as https from 'https';
-import { processSfIEventsAddToQueue } from './addtoqueue.mjs'
-
+import { ddbClient,QueryCommand } from "./globals.mjs";
 async function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -36,8 +30,6 @@ export const processDdbQuery = async (event) => {
         
     // }
         
-    const userId = "1234";
-    
     var tablename = null;
     var expression = null;
     var expressionAttributeNames = null;
@@ -49,6 +41,7 @@ export const processDdbQuery = async (event) => {
         expressionAttributeValues = JSON.parse(event.body).expressionAttributeValues;
         expressionAttributeNames = JSON.parse(event.body).expressionAttributeNames;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body! Error in parsing"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

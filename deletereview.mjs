@@ -3,8 +3,8 @@
 
 import { s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
+import { Buffer } from 'buffer'
 
 export const processDeleteReview = async (event) => {
     
@@ -70,6 +70,7 @@ export const processDeleteReview = async (event) => {
         mmddyyyy = JSON.parse(event.body).mmddyyyy;
         console.log(mmddyyyy);
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         processAddLog(userId, 'deletereview', event, response, response.statusCode)
         return response;

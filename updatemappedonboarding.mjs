@@ -1,15 +1,13 @@
 // getunmappedevents (projectid)
 
-import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, DeleteItemCommand, QueryCommand, PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS} from "./globals.mjs";
+import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE, ddbClient, UpdateItemCommand, PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand } from "./globals.mjs";
 import { processStoreMapping } from './storemapping.mjs';
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-import { processSfIEventsAddToQueueSfCalendar } from './addtoqueuesfcalendar.mjs'
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
-
+import { Buffer } from "buffer";
 export const processUpdateMappedOnboarding = async (event) => {
     
     console.log('update mapped countries');
@@ -58,7 +56,6 @@ export const processUpdateMappedOnboarding = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -81,6 +78,7 @@ export const processUpdateMappedOnboarding = async (event) => {
         presigned = JSON.parse(event.body).presigned;
         key = JSON.parse(event.body).key;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -119,13 +117,13 @@ export const processUpdateMappedOnboarding = async (event) => {
         }
         
         if(flagEncryptedNotFound){
-            var command = new GetObjectCommand({
+            command = new GetObjectCommand({
               Bucket: BUCKET_NAME,
               Key: projectid + '_' + onboardingstep + '_job.json',
             });
             
-            var responseS3;
-            var jsonData = {};
+            responseS3;
+            jsonData = {};
             try {
                 const response = await s3Client.send(command);
                 const s3ResponseStream = response.Body;
@@ -273,7 +271,7 @@ export const processUpdateMappedOnboarding = async (event) => {
         updateParams.ExpressionAttributeNames = {};
         updateParams.ExpressionAttributeNames["#timestamp"+onboardingstep+"update1"] = "timestamp"+onboardingstep+"update";
         
-        var resultUpdate = await ddbUpdate();
+        await ddbUpdate();
         
         let encryptedData = await processEncryptData(projectid, data)
         command = new PutObjectCommand({
@@ -295,7 +293,7 @@ export const processUpdateMappedOnboarding = async (event) => {
             Bucket: BUCKET_NAME,
             Key:'erroremaillist.json'
         })
-        var jsonData = {};
+        jsonData = {};
       
         try {
             const response = await s3Client.send(command);

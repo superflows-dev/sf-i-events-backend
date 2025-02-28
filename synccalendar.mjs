@@ -1,12 +1,11 @@
 // synccalendar (projectid, events)
 
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE, ddbClient, UpdateItemCommand, GetItemCommand, PutItemCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from "buffer";
 export const processSyncCalendar = async (event) => {
     
     if((event["headers"]["Authorization"]) == null) {
@@ -63,6 +62,7 @@ export const processSyncCalendar = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         events = JSON.parse(event.body).events.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -149,7 +149,7 @@ export const processSyncCalendar = async (event) => {
         }
     };
   
-    var resultUpdate = await ddbUpdate();
+    await ddbUpdate();
     
     const response = {statusCode: 200, body: {result: true}};
     processAddLog(userId, 'synccalendar', event, response, response.statusCode)

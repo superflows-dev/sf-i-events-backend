@@ -1,10 +1,11 @@
 import { processAuthenticate } from './authenticate.mjs'
-import { s3Client, BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, CALENDAR_PROCESS_BLOCK_SIZE, KMS_KEY_REGISTER, BUCKET_FOLDER_STATISTICS } from './globals.mjs'
+import { s3Client, BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand,  KMS_KEY_REGISTER, BUCKET_FOLDER_STATISTICS } from './globals.mjs'
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
 import { processKmsDecrypt } from './kmsdecrypt.mjs'
 import { processGetCompletenessStatus } from './getcompletenessstatus.mjs'
 import { processSendEmail } from './sendemail.mjs'
+import { Buffer } from 'buffer'
 export const processGenerateStatistics = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -47,6 +48,7 @@ export const processGenerateStatistics = async (event) => {
         userid = JSON.parse(event.body).userid;
         role = JSON.parse(event.body).role;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -59,7 +61,6 @@ export const processGenerateStatistics = async (event) => {
     }
     
     let userFileKey = projectid + '_' + userid + '_' + year + '_' + role +'_calendar_job_enc.json'
-    let flagUserFileNotFound = false;
     
     var command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
@@ -171,6 +172,7 @@ export const processGenerateStatistics = async (event) => {
                                         // console.log(events[l].comments);
                                     }
                                 }catch(e){
+                                    console.log(e);
                                     events[l].documents = [];
                                     events[l].comments = [];
                                     events[l].approved = false;
@@ -638,6 +640,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log(e);
         return false;
     }
     return true;

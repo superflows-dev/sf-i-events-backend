@@ -1,17 +1,10 @@
 // getunmappedevents (projectid)
 
-import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_COU, TABLE_C, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, QueryCommand, DeleteItemCommand, BUCKET_NAME, s3Client, PutObjectCommand, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } from "./globals.mjs";
+import { getSignedUrl, ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, BUCKET_NAME, s3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import { processDecryptData } from './decryptdata.mjs'
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-} 
+import { processDecryptData } from './decryptdata.mjs';
+import { Buffer } from 'buffer'
 
 export const processGetMappedSerializedOnboarding = async (event) => {
     
@@ -60,8 +53,6 @@ export const processGetMappedSerializedOnboarding = async (event) => {
     // //     }   
     // // }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var projectid = null;
@@ -71,6 +62,7 @@ export const processGetMappedSerializedOnboarding = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         onboardingstep = JSON.parse(event.body).onboardingstep.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -93,7 +85,6 @@ export const processGetMappedSerializedOnboarding = async (event) => {
       Key: projectid + '_' + onboardingstep + '_job_enc.json',
     });
     
-    var responseS3;
     const storedData = {};
     let flagEncryptedNotFound = false
     try {
@@ -118,9 +109,6 @@ export const processGetMappedSerializedOnboarding = async (event) => {
           Key: projectid + '_' + onboardingstep + '_job.json',
         });
         
-        var responseS3;
-        // const storedData = {};
-        let flagEncryptedNotFound = false
         try {
             const response = await s3Client.send(command);
             const s3ResponseStream = response.Body;
@@ -144,9 +132,6 @@ export const processGetMappedSerializedOnboarding = async (event) => {
     
     for(var i = 0; i < storedData.mappings.mappings.length; i++) {
         
-        var arr = [];
-        
-        
         if(onboardingstep == "countries") {
             
             for(var j = 0; j < storedData.mappings.mappings[i].countries.length; j++) {
@@ -162,7 +147,7 @@ export const processGetMappedSerializedOnboarding = async (event) => {
             
         } else if(onboardingstep == "entities") {
             
-            for(var j = 0; j < storedData.mappings.mappings[i].entities.length; j++) {
+            for(j = 0; j < storedData.mappings.mappings[i].entities.length; j++) {
             
                 const mapping = JSON.parse(JSON.stringify(storedData.mappings.mappings[i]));
                 
@@ -175,7 +160,7 @@ export const processGetMappedSerializedOnboarding = async (event) => {
             
         } else if(onboardingstep == "locations") {
             
-            for(var j = 0; j < storedData.mappings.mappings[i].locations.length; j++) {
+            for(j = 0; j < storedData.mappings.mappings[i].locations.length; j++) {
             
                 const mapping = JSON.parse(JSON.stringify(storedData.mappings.mappings[i]));
                 
@@ -212,9 +197,8 @@ export const processGetMappedSerializedOnboarding = async (event) => {
     });
     
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
       console.error(err);
     }
     

@@ -1,12 +1,6 @@
 // getunmappedevents (projectid)
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_C, TABLE_CAL_JOBS, TABLE_T, TABLE_CAL, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, QueryCommand, ADMIN_METHODS, FINCAL_START_MONTH, UpdateItemCommand, SERVER_KEY } from "./globals.mjs";
-import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import * as https from 'https';
-import { processSfIEventsAddToQueue } from './addtoqueue.mjs'
-
+import { QueryCommand, ddbClient } from "./globals.mjs";
 export const processDdbQueryPaginated = async (event) => {
     
     // console.log('getting mapped calendar');
@@ -29,8 +23,6 @@ export const processDdbQueryPaginated = async (event) => {
         
     // }
     
-    const userId = "1234";
-    
     var tablename = null;
     var expression = null;
     var expressionAttributeNames = null;
@@ -44,6 +36,7 @@ export const processDdbQueryPaginated = async (event) => {
         expressionAttributeNames = JSON.parse(event.body).expressionAttributeNames;
         exclusivestartkey = JSON.parse(event.body).exclusivestartkey;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body! Error in parsing"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

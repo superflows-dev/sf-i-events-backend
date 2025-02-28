@@ -1,10 +1,7 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE, TABLE_R, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, SERVER_KEY } from "./globals.mjs";
-import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
+import { TABLE_R, ddbClient, QueryCommand, SERVER_KEY } from "./globals.mjs";
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -57,7 +54,7 @@ export const processGetReportingStatus = async (event) => {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
     }
     
-    const userId = "1234";
+    // const userId = "1234";
     
     var projectid = null;
     var entityid = null;
@@ -72,6 +69,7 @@ export const processGetReportingStatus = async (event) => {
         mmddyyyy = JSON.parse(event.body).mmddyyyy.trim();
         eventid = JSON.parse(event.body).eventid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -115,14 +113,14 @@ export const processGetReportingStatus = async (event) => {
     // };
     
     
-    async function ddbGet (getParams) {
-        try {
-          const data = await ddbClient.send(new GetItemCommand(getParams));
-          return data;
-        } catch (err) {
-          return err;
-        }
-    };
+    // async function ddbGet (getParams) {
+    //     try {
+    //       const data = await ddbClient.send(new GetItemCommand(getParams));
+    //       return data;
+    //     } catch (err) {
+    //       return err;
+    //     }
+    // };
     
     var queryParams = {
         KeyConditionExpression: "#projectid1 = :projectid1",
@@ -150,6 +148,7 @@ export const processGetReportingStatus = async (event) => {
             }
             return;
         } catch (err) {
+            console.log('inside scan', err);
             await sleep(2000);
             ddbQuerySerial(queryParams, exclusiveStartKey);
             //return err;
@@ -171,7 +170,7 @@ export const processGetReportingStatus = async (event) => {
         
         if(dbMmddyy == mmddyyyy && dbEntityId == entityid && dbLocationId == locationid && dbEventId == eventid) {
             const reportJson = JSON.parse(report.data.S);
-            const docs = JSON.parse(reportJson.docs);
+            // const docs = JSON.parse(reportJson.docs);
             const comments = reportJson.comments;
             const lastupdated = reportJson.lastupdated;
             console.log(reportJson.approved);

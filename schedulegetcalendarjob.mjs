@@ -1,8 +1,8 @@
 import { CHANGE_MANAGEMENT_START_CALENDAR_PATH } from './globals.mjs'
 import { processAuthenticate } from './authenticate.mjs'
-import { newUuidV4 } from './newuuid.mjs';
 import { processNotifyChangeCalendar } from './notifychangecalendar.mjs'
 import { processAddLog } from './addlog.mjs'
+import { Buffer } from 'buffer'
 export const processScheduleGetCalendarJob = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -45,6 +45,7 @@ export const processScheduleGetCalendarJob = async (event) => {
         year = JSON.parse(event.body).year;
         contractstartdate = JSON.parse(event.body).contractstartdate;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

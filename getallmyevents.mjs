@@ -1,23 +1,10 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, BUCKET_NAME, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG } from "./globals.mjs";
+import { ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, s3Client, GetObjectCommand, BUCKET_NAME, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-
+import { Buffer } from 'buffer'
 
 export const processGetAllMyEvents = async (event) => {
     
@@ -52,8 +39,6 @@ export const processGetAllMyEvents = async (event) => {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var projectid = null;
@@ -79,6 +64,7 @@ export const processGetAllMyEvents = async (event) => {
         searchstring = JSON.parse(event.body).searchstring;
         year = JSON.parse(event.body).year.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -159,24 +145,6 @@ export const processGetAllMyEvents = async (event) => {
     });
     
     responseS3;
-    var storedTagsManifest = {};
-    try {
-        responseS3 = await s3Client.send(command);
-        const s3ResponseStream = responseS3.Body;
-        const chunks = []
-        for await (const chunk of s3ResponseStream) {
-            chunks.push(chunk)
-        }
-        const responseBuffer = Buffer.concat(chunks)
-        let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
-        const jsonContent = JSON.parse(decryptedData);
-        storedTagsManifest = jsonContent;
-        
-        
-    } catch (err) {
-      console.log(err);
-      flagUserFileNotFound = true
-    }
     
     if(!flagUserFileNotFound){
         calendarList.push(projectid + '_' + userprofileid + '_' + year + '_' + role + '_calendar_job');
@@ -213,15 +181,15 @@ export const processGetAllMyEvents = async (event) => {
         
         if(view == VIEW_COUNTRY) {
             
-            for(var cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
+            for(cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
                 
                 const country = Object.keys(storedManifest)[cntManifest];
                 
                 if(country == countryid) {
-                    for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                    for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                         
                         const entity = Object.keys(storedManifest[country])[cntEntities];
-                        for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                        for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                             
                             const location = Object.keys(storedManifest[country][entity])[cntLocations];
                             calendarList.push(projectid + '_' + location + '_' + year + '_calendar_job');
@@ -237,14 +205,14 @@ export const processGetAllMyEvents = async (event) => {
         
         if(view == VIEW_TAG) {
             
-            for(var cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
+            for(cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
                 
                 const country = Object.keys(storedManifest)[cntManifest];
                 
-                for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                     
                     const entity = Object.keys(storedManifest[country])[cntEntities];
-                    for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                    for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                         
                         const location = Object.keys(storedManifest[country][entity])[cntLocations];
                         calendarList.push(projectid + '_' + location + '_'+ year + '_calendar_job');
@@ -263,7 +231,7 @@ export const processGetAllMyEvents = async (event) => {
     var cnt = 0;
     while(cnt < calendarList.length) {
         
-        const command = new GetObjectCommand({
+        let command = new GetObjectCommand({
           Bucket: BUCKET_NAME,
           Key: calendarList[cnt] + '_enc.json',
         });
@@ -319,7 +287,7 @@ export const processGetAllMyEvents = async (event) => {
                 
                 const mm = mmddyyyy.split('/')[0];
                 const dd = mmddyyyy.split('/')[1];
-                const yyyy = mmddyyyy.split('/')[2];
+                // const yyyy = mmddyyyy.split('/')[2];
                 
                 var entity = "";
                 var entities = [];
@@ -400,7 +368,7 @@ export const processGetAllMyEvents = async (event) => {
                                     continue;
                                 }
                                 // console.log('events', events.length, role, ROLE_REPORTER);
-                                for(var k = 0; k < events.length; k++) {
+                                for(k = 0; k < events.length; k++) {
                                     
                                     var pushFlag = false;
                                     
@@ -447,9 +415,7 @@ export const processGetAllMyEvents = async (event) => {
                                     if(pushFlag && view == VIEW_TAG) {
                                     
                                         if(tagid != "allevents") {
-                                            if(events[k]['tagsmap'][tagid] != null) {
-                                                
-                                            } else {
+                                            if(events[k]['tagsmap'][tagid] == null) {
                                                 pushFlag = false;
                                             }
                                         }
@@ -480,6 +446,7 @@ export const processGetAllMyEvents = async (event) => {
                                                 || (events[k].risk + "").toLowerCase().indexOf(searchstring) >= 0
                                                 || (events[k].riskarea + "").toLowerCase().indexOf(searchstring) >= 0
                                                 ) {
+                                                    console.log('searchstring', searchstring, events[k].obligationtitle);
                                             } else {
                                                 pushFlag = false;
                                             }

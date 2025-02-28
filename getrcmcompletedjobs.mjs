@@ -1,12 +1,10 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, TABLE_RCM_JOBS, SERVER_KEY } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ddbClient, ScanCommand, TABLE_RCM_JOBS, SERVER_KEY } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from 'buffer'
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -15,9 +13,6 @@ function sleep(ms) {
 }
 
 export const processGetRcmCompletedJobs = async (event) => {
-    
-    var serverkey = "";
-    var userId = "1234"
     
     if((event["headers"]["x-server-key"]) != null) {
         
@@ -78,8 +73,6 @@ export const processGetRcmCompletedJobs = async (event) => {
         //         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
         //     }   
         // }
-        
-        userId = authResult.userId;
     
     }
     
@@ -123,7 +116,7 @@ export const processGetRcmCompletedJobs = async (event) => {
         } catch (err) {
             await sleep(2000);
             ddbQuerySerial(queryParams, exclusiveStartKey);
-            // console.log(err);
+            console.log(err);
             // return err;
         }
     };

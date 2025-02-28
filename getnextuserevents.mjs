@@ -1,23 +1,13 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { getSignedUrl, KMS_KEY_REGISTER, SERVER_KEY, ROLE_ALL_ROLES, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
+import { KMS_KEY_REGISTER, ROLE_ALL_ROLES, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, BUCKET_NAME, s3Client, GetObjectCommand, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
 import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
 import { processDecryptData } from './decryptdata.mjs';
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import crypto from 'crypto';
 import { getCompletenessStatus } from './getcompliancestatus.mjs'
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+import { Buffer } from 'buffer'
 
 export const processGetNextUserEvents = async (event) => {
     
@@ -54,7 +44,6 @@ export const processGetNextUserEvents = async (event) => {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -83,6 +72,7 @@ export const processGetNextUserEvents = async (event) => {
     try{
         list = (JSON.parse(event.body).list == "yes")
     }catch(e){
+        console.log(e)
         list = false
     }
     
@@ -200,7 +190,7 @@ export const processGetNextUserEvents = async (event) => {
             // jsonContent = null;
             
         } catch (err) {
-        //   console.error(err); 
+          console.error(err); 
           flagEncryptedNotFound = true
         }
         if(flagEncryptedNotFound){
@@ -229,7 +219,7 @@ export const processGetNextUserEvents = async (event) => {
                 // jsonContent = null;
                 
             } catch (err) {
-            //   console.error(err);
+              console.error(err);
             }
         }
         storedCalendar = sortByDate(storedCalendar)
@@ -375,6 +365,7 @@ export const processGetNextUserEvents = async (event) => {
                                                     // console.log(events[l].comments);
                                                 }
                                             }catch(e){
+                                                console.log('error', e)
                                                 events[l].documents = [];
                                                 events[l].comments = [];
                                                 events[l].approved = false;
@@ -719,6 +710,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log('error', e)
         return false;
     }
     return true;

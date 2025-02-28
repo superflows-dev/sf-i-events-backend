@@ -1,5 +1,6 @@
-import { KMS_KEY_REGISTER, UPLOAD_TYPE_REVIEW, UPLOAD_TYPE_REPORT, ADMIN_METHODS, BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, s3Client } from "./globals.mjs";
+import { BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, s3Client } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs'
+import { Buffer } from 'buffer'
 export const processCopyReportingToMonthly = async (event) => {
     console.log('processing reporting migration', event.body);
     if((event["headers"]["Authorization"]) == null) {
@@ -36,6 +37,7 @@ export const processCopyReportingToMonthly = async (event) => {
     try{
          projectid = JSON.parse(event.body).projectid.trim();
     }catch(e){
+        console.log(e); 
         const response = {statusCode: 400, body: { result: false, error: "Malformed body! " + event.body}};
         return response;
     }

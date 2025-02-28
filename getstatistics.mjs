@@ -1,10 +1,8 @@
 import { processAuthenticate } from './authenticate.mjs'
-import { s3Client, BUCKET_NAME, BUCKET_FOLDER_REPORTING, GetObjectCommand, PutObjectCommand, CALENDAR_PROCESS_BLOCK_SIZE, KMS_KEY_REGISTER, BUCKET_FOLDER_STATISTICS } from './globals.mjs'
+import { s3Client, BUCKET_NAME, GetObjectCommand, BUCKET_FOLDER_STATISTICS } from './globals.mjs'
 import { processDecryptData } from './decryptdata.mjs'
-import { processEncryptData } from './encryptdata.mjs'
-import { processKmsDecrypt } from './kmsdecrypt.mjs'
-import { processGetCompletenessStatus } from './getcompletenessstatus.mjs'
 import { processGetUserLastTime } from './getuserlasttime.mjs'
+import { Buffer } from 'buffer'
 export const processGetStatistics = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -47,8 +45,8 @@ export const processGetStatistics = async (event) => {
     var filteruserid = null;
     var functionid = null;
     var locationid = null;
-    var subfiltercriteria = null;
-    var subfilterid = null;
+    // var subfiltercriteria = null;
+    // var subfilterid = null;
     try {
         projectid = JSON.parse(event.body).projectid.trim();
         userid = JSON.parse(event.body).userid;
@@ -60,10 +58,11 @@ export const processGetStatistics = async (event) => {
         filteruserid = JSON.parse(event.body).filteruserid ?? null;
         functionid = JSON.parse(event.body).functionid ?? null;
         locationid = JSON.parse(event.body).locationid ?? null;
-        subfiltercriteria = JSON.parse(event.body).subfiltercriteria ?? "";
-        subfilterid = JSON.parse(event.body).subfilterid ?? null;
+        // subfiltercriteria = JSON.parse(event.body).subfiltercriteria ?? "";
+        // subfilterid = JSON.parse(event.body).subfilterid ?? null;
 
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -312,7 +311,7 @@ const timeSince = (lasttime) => {
 
     } else {
 
-      var interval = Math.abs(seconds) / 31536000;
+      interval = Math.abs(seconds) / 31536000;
 
 
       console.log('timesince', seconds);

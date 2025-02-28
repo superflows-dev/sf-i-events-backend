@@ -1,12 +1,10 @@
 // getunmappedevents (projectid)
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE_S, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, GetObjectCommand, BUCKET_NAME, s3Client } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE_S, ddbClient, GetItemCommand, PutItemCommand, GetObjectCommand, BUCKET_NAME, s3Client } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
-
+import { Buffer } from 'buffer'
 export const processGetMappedStatutes = async (event) => {
     
     console.log('getting mapped statutes');
@@ -49,13 +47,12 @@ export const processGetMappedStatutes = async (event) => {
         }    
     }
     
-    const userId = authResult.userId;
-    
     var projectid = null;
     
     try {
         projectid = JSON.parse(event.body).projectid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -130,7 +127,6 @@ export const processGetMappedStatutes = async (event) => {
           Key: projectid + '_statutes_job_enc.json',
         });
         
-        var responseS3;
         let flagFoundEncrypted = true;
         try {
             const response = await s3Client.send(command);

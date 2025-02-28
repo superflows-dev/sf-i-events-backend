@@ -1,11 +1,9 @@
 // getunmappedevents (projectid)
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, DeleteItemCommand, QueryCommand, ADMIN_METHODS, FINCAL_START_MONTH, UpdateItemCommand, SERVER_KEY, kmsClient, EncryptCommand, KMS_KEY_REGISTER } from "./globals.mjs";
 import { processKmsEncrypt } from './kmsencrypt.mjs';
-import { processKmsDecrypt } from './kmsdecrypt.mjs';
 import { newUuidV4 } from './newuuid.mjs';
 import crypto from 'crypto';
-
+import { Buffer } from 'buffer';
 
 export const processEncryptData = async (projectid, strData) => {
     const newSecret = newUuidV4();

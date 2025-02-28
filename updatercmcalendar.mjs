@@ -1,23 +1,12 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE, TABLE_C, TABLE_CAL_JOBS, TABLE_CAL, TABLE_T, TABLE_R, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, UpdateItemCommand, ADMIN_METHODS, TABLE_RCM_JOBS, SERVER_KEY } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE_CAL, ddbClient, UpdateItemCommand, SERVER_KEY } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+import { Buffer } from "buffer";
 
 export const processUpdateRcmCalendar = async (event) => {
-    
-    var serverkey = "";
-    var userId = "1234"
     
     if((event["headers"]["x-server-key"]) != null) {
         
@@ -78,7 +67,6 @@ export const processUpdateRcmCalendar = async (event) => {
         //     }   
         // }
         
-        userId = authResult.userId;
     
     }
     
@@ -93,6 +81,7 @@ export const processUpdateRcmCalendar = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         data = JSON.parse(event.body).data;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -145,7 +134,7 @@ export const processUpdateRcmCalendar = async (event) => {
         }
     };
     
-    var resultUpdate = await ddbUpdate(setParams);
+    await ddbUpdate(setParams);
     
     const response = {statusCode: 200, body: {result: true}};
     return response;

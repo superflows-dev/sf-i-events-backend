@@ -1,23 +1,9 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { getSignedUrl, KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE,  AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
-import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
-import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
-import { processDecryptData } from './decryptdata.mjs';
+import { BUCKET_NAME, s3Client, PutObjectCommand } from "./globals.mjs";
 import { processEncryptData } from './encryptdata.mjs';
-import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processComputeAllCountryEvents } from './computeallcountryevents.mjs'
-import crypto from 'crypto';
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 export const processCompileAllCountryEvents = async (event) => {
     
@@ -65,7 +51,6 @@ export const processCompileAllCountryEvents = async (event) => {
     let arrEvents = responseCompute.body.data
     console.log('inside processCompileAllCountryEvents 2', arrEvents);
     
-    let responseS3
     const fileKey = projectid + '_' + userprofileid + '_' + dates.year + '_' + role +'_calendar_range_job_enc.json'
     let encryptedData = await processEncryptData(projectid, JSON.stringify(arrEvents))
     let command = new PutObjectCommand({
@@ -76,9 +61,8 @@ export const processCompileAllCountryEvents = async (event) => {
     });
     
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
       console.error(err);
     }
     

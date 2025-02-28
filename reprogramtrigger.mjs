@@ -1,11 +1,10 @@
 // mapevent (events[], users[])
 
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, UpdateItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, TIMEFRAME_BEFORE, TIMEFRAME_AFTER } from "./globals.mjs";
+import { ddbClient, GetItemCommand, UpdateItemCommand, TIMEFRAME_BEFORE, TABLE } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from 'buffer';
 export const processReprogramTrigger = async (event) => {
     
     console.log('triggerevent');
@@ -60,6 +59,7 @@ export const processReprogramTrigger = async (event) => {
         // eventid = JSON.parse(event.body).eventid.trim();
         // timestamp = JSON.parse(event.body).timestamp.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -127,7 +127,7 @@ export const processReprogramTrigger = async (event) => {
     
     console.log('triggers before', Object.keys(triggers));
     
-    for(var i = 0; i < triggerKeys.length; i++) {
+    for(i = 0; i < triggerKeys.length; i++) {
         
         console.log('triggerkey', triggerKeys[i]);
         
@@ -171,7 +171,7 @@ export const processReprogramTrigger = async (event) => {
                 
                 console.log('newduedate', newduedate);
                 
-                const ddmm = ("0" + (newduedate.getDate())).slice(-2) + "/" +  ("0" + (newduedate.getMonth() + 1)).slice(-2);
+                // const ddmm = ("0" + (newduedate.getDate())).slice(-2) + "/" +  ("0" + (newduedate.getMonth() + 1)).slice(-2);
                 const mmdd = ("0" + (newduedate.getMonth()+1)).slice(-2) + "/" +  ("0" + (newduedate.getDate())).slice(-2);
                 
                 console.log('mmdd', mmdd);
@@ -182,7 +182,7 @@ export const processReprogramTrigger = async (event) => {
                 
                 var found = false;
         
-                for(var l = 0; l < eventsJson[mmdd].length; l++) {
+                for(l = 0; l < eventsJson[mmdd].length; l++) {
                     
                     console.log('trigger b',eventsJson[mmdd][l]["id"], compliance.id)
                     if(eventsJson[mmdd][l]["id"] == compliance.id) {

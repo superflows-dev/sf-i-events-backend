@@ -1,17 +1,16 @@
 // getcalendar (projectid)
 
 
-import { REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ROLES_ORDER, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS, CALENDAR_PROCESS_BLOCK_SIZE, schedulerClient, CreateScheduleCommand } from "./globals.mjs";
+import { PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand, DeleteObjectCommand, CALENDAR_PROCESS_BLOCK_SIZE, schedulerClient, CreateScheduleCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
-import { processUpdateUserMap } from './updateusermap.mjs'
 import { processGetProjectDetails } from './getprojectdetails.mjs';
 import { processSendEmail } from './sendemail.mjs'
 import { processGenerateUserMap } from './generateusermap.mjs'
 import { processCheckRequestid } from './checkrequestid.mjs'
+import { Buffer } from 'buffer'
 function isNumeric(str) { 
   if (typeof str != "string") return false // we only process strings!  
   return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
@@ -56,14 +55,6 @@ const getFincalFromMonth = (mm, yyyy) => {
     
 }
 
-const getCurrentFiscal = () => {
-    let date = new Date()
-    if(date.getMonth() < 4){
-        return (date.getFullYear() - 1)
-    }
-    return date.getFullYear();
-}
-
 const pushEventUser = (arrUsersEvents, mmddyyyy, item, contractStartDate, role) => {
     
     if(contractStartDate != null) {
@@ -92,7 +83,6 @@ const pushEventUser = (arrUsersEvents, mmddyyyy, item, contractStartDate, role) 
     
     for(var k = 0 ; k < item[role].length; k++){
         const userArr = item[role][k].split(";")
-        const userName = userArr[0]
         const userId = userArr[1]
         
         if(arrUsersEvents[userId] == null) {
@@ -131,7 +121,7 @@ const pushEventUser = (arrUsersEvents, mmddyyyy, item, contractStartDate, role) 
         
         var jsonCompliance = {};
         
-        for(var i = 0; i < jsonCols.length; i++) {
+        for(i = 0; i < jsonCols.length; i++) {
             jsonCompliance[jsonCols[i]] = jsonData1[i];
         }
         
@@ -326,6 +316,7 @@ async function getObjectData (projectid, onboardingstep) {
         jsonData.mappings = jsonContent;
         
     } catch (err) {
+        console.error(err);
       flagEncryptedNotFound = true
     }
     
@@ -337,7 +328,6 @@ async function getObjectData (projectid, onboardingstep) {
         
         responseS3;
         jsonData = {};
-        let flagEncryptedNotFound = false
         try {
             const response = await s3Client.send(command);
             const s3ResponseStream = response.Body; 
@@ -350,34 +340,11 @@ async function getObjectData (projectid, onboardingstep) {
             jsonData.mappings = jsonContent;
             
         } catch (err) {
-            
+            console.error(err);
         }
     }
     
     return jsonData;
-    
-}
-
-const pushUser = (usermap, userid, role, countryid, countryname, entityid, entityname, locationid, locationname, tags) => {
-    
-    if(usermap[userid] == null) usermap[userid] = {};
-    if(usermap[userid]['roles'] == null) usermap[userid]['roles'] = {};
-    if(usermap[userid]['roles'][role] == null) usermap[userid]['roles'][role] = {};
-    if(usermap[userid][countryname+';'+countryid] == null) usermap[userid][countryname+';'+countryid] = {};
-    if(usermap[userid][countryname+';'+countryid] == null) usermap[userid][countryname+';'+countryid] = {};
-    if(usermap[userid][countryname+';'+countryid][entityname+';'+entityid] == null) usermap[userid][countryname+';'+countryid][entityname+';'+entityid] = {};
-    if(usermap[userid][countryname+';'+countryid][entityname+';'+entityid][locationname+';'+locationid] == null) usermap[userid][countryname+';'+countryid][entityname+';'+entityid][locationname+';'+locationid] = {};
-    if(usermap[userid][countryname+';'+countryid][entityname+';'+entityid][locationname+';'+locationid]['tags'] == null) usermap[userid][countryname+';'+countryid][entityname+';'+entityid][locationname+';'+locationid]['tags'] = [];
-    
-    for(var i = 0; i < tags.length; i++) {
-        
-        if(!usermap[userid][countryname+';'+countryid][entityname+';'+entityid][locationname+';'+locationid]['tags'].includes(tags[i])) {
-            usermap[userid][countryname+';'+countryid][entityname+';'+entityid][locationname+';'+locationid]['tags'].push(tags[i]);
-        }
-        
-    }
-    
-    return usermap; 
     
 }
 
@@ -528,7 +495,6 @@ export const processGetCalendarUser = async (event) => {
     if(!authResult.result) {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
-    const userId = authResult.userId;
     
     var projectid = null;
     var year = null;
@@ -542,6 +508,7 @@ export const processGetCalendarUser = async (event) => {
         contractstartdate = JSON.parse(event.body).contractstartdate;
         startIndex = JSON.parse(event.body).startindex ?? "0";
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -922,7 +889,7 @@ export const processGetCalendarUser = async (event) => {
                 
             } else {
                 
-                var arrDueDate = arrDuedates[j].split('/');
+                arrDueDate = arrDuedates[j].split('/');
             
                 
                 if(arrDueDate.length != 3) {
@@ -1127,14 +1094,14 @@ export const processGetCalendarUser = async (event) => {
         }
         
         
-        var statute = "";
-        for(var j = 0; j < jsonCols.length; j++) {
-            if(jsonCols[j] == "statute") {
-                statute = (jsonDat[j] + "").trim();
-            }
-        }
+        // var statute = "";
+        // for(j = 0; j < jsonCols.length; j++) {
+        //     if(jsonCols[j] == "statute") {
+        //         statute = (jsonDat[j] + "").trim();
+        //     }
+        // }
         
-        const countryname = item.countryname.replace(/ *\([^)]*\) */g, "");
+        // const countryname = item.countryname.replace(/ *\([^)]*\) */g, "");
         
     }
     
@@ -1214,7 +1181,7 @@ export const processGetCalendarUser = async (event) => {
             let jsonStr = JSON.stringify(arrReportersEvents[key])
             var encryptedData = await processEncryptData(projectid, jsonStr)
             var responseS3;
-            var command = new PutObjectCommand({
+            command = new PutObjectCommand({
               Bucket: BUCKET_NAME,
               Key: projectid + '_' + key + '_' + year + '_reporter_calendar_job_' + startIndex + '_enc.json',
               Body: encryptedData,
@@ -1369,7 +1336,7 @@ export const processGetCalendarUser = async (event) => {
               Bucket: BUCKET_NAME,
               Key: projectid + '_' + userid + '_' + year + '_reporter_calendar_job_' + i + '_enc.json',
             });
-            var flagError = false
+            flagError = false
             var jsonData = {};
             try {
                 const response = await s3Client.send(command);
@@ -1420,7 +1387,7 @@ export const processGetCalendarUser = async (event) => {
                 jsonData = jsonContent;
                 
             } catch (err) {
-                // console.log('read error', startIndex, err)
+                console.log('read error', startIndex, err)
                 flagError = true;
             }
             
@@ -1434,7 +1401,7 @@ export const processGetCalendarUser = async (event) => {
                 try {
                     await s3Client.send(command);
                 } catch (err) {
-                    // console.log('delete error', startIndex, err)
+                    console.log('delete error', startIndex, err)
                 }
             }
             
@@ -1457,7 +1424,7 @@ export const processGetCalendarUser = async (event) => {
                 jsonData = jsonContent;
                 
             } catch (err) {
-                // console.log('read error', startIndex, err)
+                console.log('read error', startIndex, err)
                 flagError = true;
             }
             
@@ -1471,7 +1438,7 @@ export const processGetCalendarUser = async (event) => {
                 try {
                     await s3Client.send(command);
                 } catch (err) {
-                    // console.log('delete error', startIndex, err)
+                    console.log('delete error', startIndex, err)
                 }
             }
             
@@ -1494,7 +1461,7 @@ export const processGetCalendarUser = async (event) => {
                 jsonData = jsonContent;
                 
             } catch (err) {
-                // console.log('read error', startIndex, err)
+                console.log('read error', startIndex, err)
                 flagError = true
             }
             
@@ -1508,7 +1475,7 @@ export const processGetCalendarUser = async (event) => {
                 try {
                     await s3Client.send(command);
                 } catch (err) {
-                    // console.log('delete error', startIndex, err)
+                    console.log('delete error', startIndex, err)
                 }
             }
             
@@ -1531,7 +1498,7 @@ export const processGetCalendarUser = async (event) => {
                 jsonData = jsonContent;
                 
             } catch (err) {
-                // console.log('read error', startIndex, err)
+                console.log('read error', startIndex, err)
                 flagError = true;
             }
             
@@ -1545,7 +1512,7 @@ export const processGetCalendarUser = async (event) => {
                 try {
                     await s3Client.send(command);
                 } catch (err) {
-                    // console.log('delete error', startIndex, err)
+                    console.log('delete error', startIndex, err)
                 }
             }
             
@@ -1557,9 +1524,9 @@ export const processGetCalendarUser = async (event) => {
                 continue;
             }
             let jsonStr = JSON.stringify(arrReportersEvents[key])
-            var encryptedData = await processEncryptData(projectid, jsonStr)
-            var responseS3;
-            var command = new PutObjectCommand({
+            encryptedData = await processEncryptData(projectid, jsonStr)
+            responseS3;
+            command = new PutObjectCommand({
               Bucket: BUCKET_NAME,
               Key: projectid + '_' + key + '_' + year + '_reporter_calendar_job_enc.json',
               Body: encryptedData,
@@ -1797,18 +1764,4 @@ export const processGetCalendarUser = async (event) => {
     
     const response = {statusCode: 200, body: {result: true}};
     return response;
-}
-
-function sortUsermapRoles(obj) {
-  if (typeof obj !== "object" || Array.isArray(obj))
-    return obj;
-  const sortedObject = {};
-  var ordering = {} // map for efficient lookup of sortIndex
-    for (var i=0; i<ROLES_ORDER.length; i++)
-        ordering[ROLES_ORDER[i]] = i;
-  const keys = Object.keys(obj).sort((a,b) => {
-        return (ordering[a] - ordering[b]);
-  });
-  keys.forEach(key => sortedObject[key] = obj[key]);
-  return sortedObject;
 }

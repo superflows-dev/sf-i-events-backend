@@ -1,12 +1,11 @@
 // getcalendar (projectid)
 
 
-import { REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS } from "./globals.mjs";
+import { PutObjectCommand, BUCKET_NAME, s3Client, GetObjectCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
 import { processDecryptData } from './decryptdata.mjs'
 import { processEncryptData } from './encryptdata.mjs'
+import { Buffer } from 'buffer'
 
 async function getObjectData (projectid, onboardingstep) {
     
@@ -31,6 +30,7 @@ async function getObjectData (projectid, onboardingstep) {
         jsonData.mappings = jsonContent;
         
     } catch (err) {
+        console.error(err);
       flagEncryptedNotFound = true
     }
     
@@ -42,7 +42,6 @@ async function getObjectData (projectid, onboardingstep) {
         
         responseS3;
         jsonData = {};
-        let flagEncryptedNotFound = false
         try {
             const response = await s3Client.send(command);
             const s3ResponseStream = response.Body; 
@@ -55,7 +54,7 @@ async function getObjectData (projectid, onboardingstep) {
             jsonData.mappings = jsonContent;
             
         } catch (err) {
-            
+            console.error(err);
         }
     }
     
@@ -104,7 +103,6 @@ export const processGetCalendarRegister = async (event) => {
     if(!authResult.result) {
         return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
     }
-    const userId = authResult.userId;
     
     var projectid = null;
     var year = null;
@@ -113,6 +111,7 @@ export const processGetCalendarRegister = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         year = JSON.parse(event.body).year;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -401,12 +400,10 @@ export const processGetCalendarRegister = async (event) => {
       ContentType: 'application/json'
     });
     
-    let responseS3;
-    
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
+      console.error(err);
     }
     
     const response = {statusCode: 200, body: {result: true}};

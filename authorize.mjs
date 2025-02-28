@@ -3,7 +3,7 @@ import { AUTH_REGION, USERPROFILE_API } from "./globals.mjs";
 
 export const processAuthorize = async (authorization, userId) => {
   
-  let myPromise = new Promise(function(resolve, reject) {
+  let myPromise = new Promise(function(resolve) {
     
     var options = {
        host: USERPROFILE_API + '.lambda-url.' + AUTH_REGION + '.on.aws',

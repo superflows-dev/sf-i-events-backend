@@ -1,9 +1,8 @@
 // getunmappedevents (projectid)
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS } from "./globals.mjs";
+import { ROLE_APPROVER, ROLE_REPORTER, TABLE, ddbClient, GetItemCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
+import { Buffer } from 'buffer'
 
 export const processGetUnmappedEvents = async (event) => {
     
@@ -46,7 +45,6 @@ export const processGetUnmappedEvents = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -57,6 +55,7 @@ export const processGetUnmappedEvents = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         role = JSON.parse(event.body).role.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

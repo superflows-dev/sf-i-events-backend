@@ -1,14 +1,13 @@
 // getunmappedevents (projectid)
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_C, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, DeleteItemCommand, PutItemCommand,QueryCommand,ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS, PutObjectCommand, getSignedUrl } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE, ddbClient, UpdateItemCommand, BUCKET_NAME, s3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand, getSignedUrl } from "./globals.mjs";
 import { processStoreMapping } from './storemapping.mjs';
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
 import { processEncryptData } from './encryptdata.mjs'
 import { processDecryptData } from './decryptdata.mjs'
-
+import { Buffer } from "buffer";
 export const processUpdateMappedCompliances = async (event) => {
      
     console.log('update mapped compliances');
@@ -59,7 +58,6 @@ export const processUpdateMappedCompliances = async (event) => {
     
     // const userId = authResult.userId;
     
-    const userId = "1234";
     
     var projectid = null;
     var presigned = null;
@@ -70,6 +68,7 @@ export const processUpdateMappedCompliances = async (event) => {
         presigned = JSON.parse(event.body).presigned;
         key = JSON.parse(event.body).key;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -180,8 +179,6 @@ export const processUpdateMappedCompliances = async (event) => {
         } 
     }
     
-    var arrCompliancesFrequencies = {};
-    
     for(var i = 0; i < jsonData.mappings.length; i++) {
         
         const id = jsonData.mappings[i].id;
@@ -276,8 +273,6 @@ export const processUpdateMappedCompliances = async (event) => {
         
     }
     
-    var resultUpdate;
-    
     const rxArr = jsonData.mappings;
     var dbArr = null; 
             
@@ -322,13 +317,13 @@ export const processUpdateMappedCompliances = async (event) => {
         }
     }    
     
-    for(var i = 0; i < rxArr.length; i++) {
+    for(i = 0; i < rxArr.length; i++) {
                 
         // loop through received array
         
         if(dbArr == null) continue; 
         
-        for(var j = 0; j < dbArr.length; j++) {
+        for(j = 0; j < dbArr.length; j++) {
             
             // looop through existing array
             
@@ -341,7 +336,7 @@ export const processUpdateMappedCompliances = async (event) => {
                     continue;
                 }
                 
-                for(var k = 0; k < dbArr[j].extraFields.length; k++) {
+                for(k = 0; k < dbArr[j].extraFields.length; k++) {
                     
                     // Loop through all the extra fields of the existing array
                     // Idea is to preserve the existing array and update only the modified fields in the received array
@@ -393,7 +388,7 @@ export const processUpdateMappedCompliances = async (event) => {
     
     const newDbArr = [];
     
-    for(var i = 0; i < rxArr.length; i++) {
+    for(i = 0; i < rxArr.length; i++) {
         
         
         newDbArr.push(rxArr[i]);
@@ -405,9 +400,9 @@ export const processUpdateMappedCompliances = async (event) => {
         for(i = 0; i < dbArr.length; i++) {
         
             const idDb = dbArr[i].id;
-            var found = false;
+            found = false;
 
-                for(var j = 0; j < rxArr.length; j++) {
+                for(j = 0; j < rxArr.length; j++) {
                     const idRx = rxArr[j].id;   
                     if(idDb == idRx) {
                         found = true;
@@ -416,14 +411,10 @@ export const processUpdateMappedCompliances = async (event) => {
             
             
             if(!found) {
-                if(idDb.indexOf(' ') >= 0) {
-                } else {
-                    if(idDb.length >= 0) {
-                        
-                    } else {
+                if(idDb.indexOf(' ') < 0) {
+                    if(idDb.length == 0) {
                         newDbArr.push(dbArr[i]);    
                     }
-                    
                 }
             }
             
@@ -473,7 +464,7 @@ export const processUpdateMappedCompliances = async (event) => {
         }
     };
     
-    var resultUpdate = await ddbUpdate(updateParams);
+    await ddbUpdate(updateParams);
     
     const deleteCommand = new DeleteObjectCommand ({
       "Bucket": BUCKET_NAME,
@@ -483,6 +474,7 @@ export const processUpdateMappedCompliances = async (event) => {
     try {
         await s3Client.send(deleteCommand);
     } catch (err) {
+        console.log(err)
     }
     
     

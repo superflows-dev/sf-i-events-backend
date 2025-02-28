@@ -1,11 +1,10 @@
 // mapevent (events[], users[])
 
 
-import { ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, FINCAL_START_MONTH, TABLE_T, TABLE_CAL, TABLE_C, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, UpdateItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, TIMEFRAME_BEFORE, TIMEFRAME_AFTER } from "./globals.mjs";
+import { FINCAL_START_MONTH, TABLE_T, TABLE_CAL, ddbClient, GetItemCommand, PutItemCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from "buffer";
 export const processUnTriggerMyEvent = async (event) => {
     
     console.log('untriggermyevent');
@@ -64,6 +63,7 @@ export const processUnTriggerMyEvent = async (event) => {
         locationid = JSON.parse(event.body).locationid.trim();
         mmdd = JSON.parse(event.body).mmdd.trim();
     } catch (e) {
+        console.log('error',e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -181,7 +181,7 @@ export const processUnTriggerMyEvent = async (event) => {
     
     arrData = [];
     
-    for(var i = 0; i < jsonData.length; i++) {
+    for(i = 0; i < jsonData.length; i++) {
         if(jsonData[i].id != eventid) {
             arrData.push(jsonData[i])
         }

@@ -4,7 +4,7 @@
 import { ROLE_APPROVER, ROLE_REPORTER, TABLE, ddbClient, GetItemCommand, UpdateItemCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from 'buffer'
 export const processMapEvents = async (event) => {
     
     console.log('mapevents');
@@ -59,6 +59,7 @@ export const processMapEvents = async (event) => {
         role = JSON.parse(event.body).role.trim();
         mapping = JSON.parse(event.body).mapping.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -137,7 +138,7 @@ export const processMapEvents = async (event) => {
             }
         };
       
-        var resultUpdate = await ddbUpdate();
+        await ddbUpdate();
         
         const response = {statusCode: 200, body: {result: true}};
         processAddLog(userId, 'mapevents', event, response, response.statusCode)
@@ -168,7 +169,7 @@ export const processMapEvents = async (event) => {
             }
         };
       
-        var resultUpdate = await ddbUpdate();
+        await ddbUpdate();
         
         const response = {statusCode: 200, body: {result: true}};
         processAddLog(userId, 'mapevents', event, response, response.statusCode)

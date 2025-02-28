@@ -1,8 +1,8 @@
 import { processAuthenticate } from './authenticate.mjs';
 import { processAddLog } from './addlog.mjs';
-import { processGetCalendar } from './getcalendar.mjs';
 import { processNotifyChange } from './notifychange.mjs';
 import { processScheduleGetCalendarJob } from './schedulegetcalendarjob.mjs'
+import { Buffer } from 'buffer'
 export const processGetCalendarTrigger = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -49,6 +49,7 @@ export const processGetCalendarTrigger = async (event) => {
         triggers = JSON.parse(event.body).triggers;
         notifychange = JSON.parse(event.body).notifychange;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

@@ -3,7 +3,7 @@ import { processAuthorize } from './authorize.mjs';
 import { ROLE_CLIENTADMIN, ROLE_CLIENTCOORD, ROLE_CLIENTSPOC, s3Client, GetObjectCommand, PutObjectCommand, BUCKET_NAME, BUCKET_FOLDER_REPORTING, KMS_KEY_REGISTER } from './globals.mjs'
 import { processDecryptData } from './decryptdata.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processEncryptData } from './encryptdata.mjs';
+import { Buffer } from 'buffer'
 export const processReconcileReporting = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -46,6 +46,7 @@ export const processReconcileReporting = async (event) => {
     try {
         projectid = JSON.parse(event.body).projectid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -134,7 +135,7 @@ export const processReconcileReporting = async (event) => {
                 console.log('dbComments',dbComments);
                 if(dbComments.length == 0){continue;}
                 let sortidArr = sortid.split(';')
-                let mmddyyyy = sortidArr[0]
+                // let mmddyyyy = sortidArr[0]
                 let entityid = sortidArr[1]
                 let locationid = sortidArr[2]
                 let eventid = sortidArr[3]
@@ -234,47 +235,47 @@ export const processReconcileReporting = async (event) => {
     return response;
 }
 
-async function reconcileComments(projectid, strDataEncrypt){
-    var decryptData;
-    let dbComments = []        
-    if(strDataEncrypt.indexOf("::") >= 0) {
+// async function reconcileComments(projectid, strDataEncrypt){
+//     var decryptData;
+//     let dbComments = []        
+//     if(strDataEncrypt.indexOf("::") >= 0) {
         
-        decryptData = await processDecryptData(projectid, strDataEncrypt);
+//         decryptData = await processDecryptData(projectid, strDataEncrypt);
         
-    } else {
+//     } else {
         
-        if(KMS_KEY_REGISTER[projectid] != null) {
-            const text = await processKmsDecrypt(projectid, strDataEncrypt);
-            decryptData = text.toLowerCase().indexOf('error') >= 0 ? strDataEncrypt : text;
-        } else {
-            decryptData = strDataEncrypt
-        }
+//         if(KMS_KEY_REGISTER[projectid] != null) {
+//             const text = await processKmsDecrypt(projectid, strDataEncrypt);
+//             decryptData = text.toLowerCase().indexOf('error') >= 0 ? strDataEncrypt : text;
+//         } else {
+//             decryptData = strDataEncrypt
+//         }
         
-    }
-    let data = {}
-    try{
-    data = JSON.parse(decryptData);
-    dbComments = data.comments;
-    }catch(e){
-        console.error(e.Code, decryptData)    
-    }
-    let strDataEncryptUpdated = strDataEncrypt;
-    if(data.approved == null){
-        if(dbComments != null && dbComments.length > 1 && dbComments[dbComments.length - 2].author == "Approver"){
-            if(dbComments[dbComments.length - 2].comment.indexOf('(Approved: Yes)') >= 0){
-                dbComments.push(dbComments.splice(dbComments.length - 2, 1)[0]);
-                data.approved = true;
-                data.comments = dbComments
-                console.log('data changed',data.event?.id)
-                // var strData = JSON.stringify(data);
-                // if(KMS_KEY_REGISTER[projectid] != null) {
-                //     strDataEncryptUpdated = await processEncryptData(projectid, strData);
-                // } else {
-                //     strDataEncryptUpdated = strData;
-                // }
-            }
-        }
-    }
+//     }
+//     let data = {}
+//     try{
+//     data = JSON.parse(decryptData);
+//     dbComments = data.comments;
+//     }catch(e){
+//         console.error(e.Code, decryptData)    
+//     }
+//     let strDataEncryptUpdated = strDataEncrypt;
+//     if(data.approved == null){
+//         if(dbComments != null && dbComments.length > 1 && dbComments[dbComments.length - 2].author == "Approver"){
+//             if(dbComments[dbComments.length - 2].comment.indexOf('(Approved: Yes)') >= 0){
+//                 dbComments.push(dbComments.splice(dbComments.length - 2, 1)[0]);
+//                 data.approved = true;
+//                 data.comments = dbComments
+//                 console.log('data changed',data.event?.id)
+//                 // var strData = JSON.stringify(data);
+//                 // if(KMS_KEY_REGISTER[projectid] != null) {
+//                 //     strDataEncryptUpdated = await processEncryptData(projectid, strData);
+//                 // } else {
+//                 //     strDataEncryptUpdated = strData;
+//                 // }
+//             }
+//         }
+//     }
     
-    return strDataEncryptUpdated
-}
+//     return strDataEncryptUpdated
+// }

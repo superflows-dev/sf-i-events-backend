@@ -3,7 +3,7 @@ import { AUTH_REGION, PROJECT_API, PROJECT_DETAIL_PATH } from "./globals.mjs";
 
 export const processGetProjectDetails = async (authorization, body) => {
   
-  let myPromise = new Promise(function(resolve, reject) {
+  let myPromise = new Promise(function(resolve) {
     
     var options = {
        host: PROJECT_API + '.lambda-url.' + AUTH_REGION + '.on.aws',

@@ -2,6 +2,7 @@ import { BUCKET_NAME, s3Client, GetObjectCommand, PutObjectCommand } from "./glo
 import { processDecryptData } from './decryptdata.mjs';
 import { processEncryptData } from './encryptdata.mjs';
 import { processCheckLastModifiedFile } from './checklastmodifiedfile.mjs'
+import { Buffer } from "buffer";
 export const processAddUserLastTime = async (projectid, userid, fieldname) => {
     let usersData = {}
     let lastupdatedUserData;
@@ -48,11 +49,9 @@ export const processAddUserLastTime = async (projectid, userid, fieldname) => {
         Body: encryptedData,
         ContentType: 'application/json'
     });
-    let responseS3;
     try {
-        responseS3 = await s3Client.send(command);
+        await s3Client.send(command);
     } catch (err) {
-        responseS3 = err;
         console.error(err);
     }
 

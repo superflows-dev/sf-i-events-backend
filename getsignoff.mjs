@@ -1,12 +1,9 @@
 // getunmappedevents (projectid)
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE_SIGNOFF, TABLE, TABLE_C, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, DeleteItemCommand, PutItemCommand,QueryCommand,ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, NUM_ONBOARDING_BACKUPS, PutObjectCommand } from "./globals.mjs";
-import { processStoreMapping } from './storemapping.mjs';
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, TABLE_SIGNOFF, ddbClient, GetItemCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-
+import { Buffer } from 'buffer'
 export const processGetSignoff = async (event) => {
     
     if((event["headers"]["Authorization"]) == null) {
@@ -53,7 +50,6 @@ export const processGetSignoff = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
     
     // const userId = "1234";
     
@@ -62,6 +58,7 @@ export const processGetSignoff = async (event) => {
     try {
         projectid = JSON.parse(event.body).projectid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

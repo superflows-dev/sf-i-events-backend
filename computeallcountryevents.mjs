@@ -1,22 +1,11 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { getSignedUrl, KMS_KEY_REGISTER, SERVER_KEY, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, FINCAL_START_MONTH, REGION, TABLE,  AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
+import { KMS_KEY_REGISTER, ROLE_REPORTER, ROLE_APPROVER, ROLE_VIEWER, ROLE_FUNCTION_HEAD, ROLE_AUDITOR, BUCKET_NAME, s3Client, GetObjectCommand, VIEW_COUNTRY, VIEW_ENTITY, VIEW_LOCATION, VIEW_TAG, BUCKET_FOLDER_REPORTING } from "./globals.mjs";
 import { processIsInCurrentFincal } from './isincurrentfincal.mjs';
-import { processIsMyEvent } from './ismyevent.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
-import { processDdbQuery } from './ddbquery.mjs';
 import { processDecryptData } from './decryptdata.mjs';
-import { processAuthenticate } from './authenticate.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-import crypto from 'crypto';
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+import { Buffer } from 'buffer'
 
 export const processComputeAllCountryEvents = async (event) => {
     
@@ -65,16 +54,19 @@ export const processComputeAllCountryEvents = async (event) => {
     try{
         list = (JSON.parse(event.body).list == "yes")
     }catch(e){
+        console.log('list error', e)
         list = false
     }
     try{
         list = (JSON.parse(event.body).range == "yes")
     }catch(e){
+        console.log('range error', e)
         list = false
     }
     try{
         month = (JSON.parse(event.body).month)
     }catch(e){
+        console.log('month error', e)
         month = "00"
     }
     
@@ -137,7 +129,6 @@ export const processComputeAllCountryEvents = async (event) => {
     //     },
     // };
     
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
     
     console.log('inside processComputeAllCountryEvents 3');
     const calendarList = [];
@@ -163,7 +154,7 @@ export const processComputeAllCountryEvents = async (event) => {
             const responseBuffer = Buffer.concat(chunks)
             let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
             const jsonContent = JSON.parse(decryptedData);
-            
+            console.log('jsonContent', jsonContent.length)
         } catch (err) {
           console.log('monthly read error', err);
           flagRangeFileNotFound = true
@@ -175,13 +166,13 @@ export const processComputeAllCountryEvents = async (event) => {
     }else if(month != "00"){
         let userMonthlyFileKey = projectid + '_' + userprofileid + '_' + year + '_' + role +'_calendar_' + month + '_job_enc.json'
         console.log('userMonthlyFileKey', userMonthlyFileKey)
-        var command = new GetObjectCommand({
+        command = new GetObjectCommand({
           Bucket: BUCKET_NAME,
           Key: userMonthlyFileKey,
         });
         
         responseS3;
-        var storedTagsManifest = {};
+        storedTagsManifest = {};
         try {
             responseS3 = await s3Client.send(command);
             const s3ResponseStream = responseS3.Body;
@@ -192,7 +183,7 @@ export const processComputeAllCountryEvents = async (event) => {
             const responseBuffer = Buffer.concat(chunks)
             let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
             const jsonContent = JSON.parse(decryptedData);
-            
+            console.log('jsonContent', jsonContent.length)
         } catch (err) {
           console.log('monthly read error', err);
           flagMonthlyFileNotFound = true
@@ -223,7 +214,7 @@ export const processComputeAllCountryEvents = async (event) => {
             const responseBuffer = Buffer.concat(chunks)
             let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
             const jsonContent = JSON.parse(decryptedData);
-            
+            console.log('jsonContent', jsonContent.length)
         } catch (err) {
           console.log(err);
           flagUserFileNotFound = true
@@ -259,7 +250,7 @@ export const processComputeAllCountryEvents = async (event) => {
                 
                 
             } catch (err) {
-            //   console.error(err);
+              console.error(err);
               flagEncryptedNotFound = true;
             } 
             console.log('flagEncryptedNotFound', flagEncryptedNotFound)
@@ -290,7 +281,7 @@ export const processComputeAllCountryEvents = async (event) => {
                     
                     
                 } catch (err) {
-                //   console.error(err); 
+                  console.error(err); 
                 } 
             }
              
@@ -330,15 +321,15 @@ export const processComputeAllCountryEvents = async (event) => {
             
             if(view == VIEW_COUNTRY) {
                 
-                for(var cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
+                for(cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
                     
                     const country = Object.keys(storedManifest)[cntManifest];
                     
                     if(country == countryid) {
-                        for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                        for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                             
                             const entity = Object.keys(storedManifest[country])[cntEntities];
-                            for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                            for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                                 
                                 const location = Object.keys(storedManifest[country][entity])[cntLocations];
                                 calendarList.push(projectid + '_' + location + '_' + year + '_calendar_job');
@@ -360,10 +351,10 @@ export const processComputeAllCountryEvents = async (event) => {
                         const country = Object.keys(storedManifest)[cntManifest];
                         // const tag = Object.keys(storedTagsManifest)[cntManifest];
                         // calendarList.push(projectid + '_' + tag + '_'+ year + '_calendar_job');
-                        for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                        for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                             
                             const entity = Object.keys(storedManifest[country])[cntEntities];
-                            for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                            for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                                 
                                 const location = Object.keys(storedManifest[country][entity])[cntLocations];
                                 calendarList.push(projectid + '_' + location + '_'+ year + '_calendar_job');
@@ -381,7 +372,7 @@ export const processComputeAllCountryEvents = async (event) => {
                     });
                     
                     responseS3;
-                    var storedTagsManifest = {};
+                    storedTagsManifest = {};
                     let flagNotFound = false
                     try {
                         responseS3 = await s3Client.send(command);
@@ -406,10 +397,10 @@ export const processComputeAllCountryEvents = async (event) => {
                             const country = Object.keys(storedManifest)[cntManifest];
                             // const tag = Object.keys(storedTagsManifest)[cntManifest];
                             // calendarList.push(projectid + '_' + tag + '_'+ year + '_calendar_job');
-                            for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                            for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                                 
                                 const entity = Object.keys(storedManifest[country])[cntEntities];
-                                for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                                for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                                     
                                     const location = Object.keys(storedManifest[country][entity])[cntLocations];
                                     calendarList.push(projectid + '_' + location + '_'+ year + '_calendar_job');
@@ -547,7 +538,7 @@ export const processComputeAllCountryEvents = async (event) => {
                 // jsonContent = null;
                 
             } catch (err) {
-            //   console.error('err2', err);
+              console.error('err2', err);
             }
         }
         console.log('storedCalendar', Object.keys(storedCalendar))
@@ -722,9 +713,7 @@ export const processComputeAllCountryEvents = async (event) => {
                                 if(pushFlag && view == VIEW_TAG) {
                                     // console.log('pushFlag', pushFlag, tagid)
                                     if(tagid != "allevents") {
-                                        if(events[l]['tagsmap'][tagid] != null) {
-                                            
-                                        } else {
+                                        if(events[l]['tagsmap'][tagid] == null) {
                                             pushFlag = false;
                                         }
                                     }
@@ -756,6 +745,7 @@ export const processComputeAllCountryEvents = async (event) => {
                                             || (events[l].risk + "").toLowerCase().indexOf(searchstring) >= 0
                                             || (events[l].riskarea + "").toLowerCase().indexOf(searchstring) >= 0
                                             ) {
+                                                console.log('searchstring', searchstring, events[l].obligationtitle)
                                         } else {
                                             pushFlag = false;
                                         }
@@ -790,6 +780,7 @@ export const processComputeAllCountryEvents = async (event) => {
                                                     // console.log(events[l].comments);
                                                 }
                                             }catch(e){
+                                                console.log('error', e)
                                                 events[l].documents = [];
                                                 events[l].comments = [];
                                                 events[l].approved = false;
@@ -943,6 +934,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log('error', e)
         return false;
     }
     return true;

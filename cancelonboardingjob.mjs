@@ -49,8 +49,6 @@ export const processCancelOnboardingJob = async (event) => {
     //     }   
     // }
     
-    const userId = authResult.userId;
-    
     // const userId = "1234";
     
     var projectid = null;
@@ -60,6 +58,7 @@ export const processCancelOnboardingJob = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         onboardingstep = JSON.parse(event.body).onboardingstep.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -157,7 +156,7 @@ export const processCancelOnboardingJob = async (event) => {
         }
     };
     
-    const resultDelete = await ddbDelete(deleteParams);
+    await ddbDelete(deleteParams);
     
     const response = {statusCode: 200, body: {result: true}};
     return response;

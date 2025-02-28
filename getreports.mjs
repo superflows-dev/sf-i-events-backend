@@ -1,17 +1,13 @@
 // synccalendar (projectid, events)
 
 
-import { BUCKET_NAME, SERVER_KEY, KMS_KEY_REGISTER, UPLOAD_TYPE_REVIEW, UPLOAD_TYPE_REPORT, REGION, TABLE, TABLE_R, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, s3Client, getSignedUrl } from "./globals.mjs";
-import { processKmsEncrypt } from './kmsencrypt.mjs';
-import { processEncryptData } from './encryptdata.mjs';
+import { BUCKET_NAME, SERVER_KEY, TABLE_R, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, s3Client, getSignedUrl } from "./globals.mjs";
 import { processDecryptData } from './decryptdata.mjs';
 import { processKmsDecrypt } from './kmsdecrypt.mjs';
 import { processAuthenticate } from './authenticate.mjs';
-import { processNotifyChange } from './notifychange.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-import crypto from 'crypto';
 import { processDdbQuery } from './ddbquery.mjs'
+import { Buffer } from 'buffer'
 
 export const processGetReports = async (event) => {
     
@@ -59,6 +55,7 @@ export const processGetReports = async (event) => {
         projectid = JSON.parse(event.body).projectid.trim();
         userprofileid = JSON.parse(event.body).userprofileid.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body! " + event.body}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -140,7 +137,7 @@ export const processGetReports = async (event) => {
             }
                 
         } catch (e) {
-            
+            console.log(e);
         }
         
         
@@ -154,11 +151,9 @@ export const processGetReports = async (event) => {
       Body: JSON.stringify(assReports),
       ContentType: 'application/json'
     });
-    let responseS3;
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
       console.error(err);
     }
     
@@ -186,6 +181,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log(e);
         return false;
     }
     return true;

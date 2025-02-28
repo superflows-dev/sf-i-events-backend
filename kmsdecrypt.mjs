@@ -1,12 +1,12 @@
 // getunmappedevents (projectid)
 
 import { kmsClient, DecryptCommand, KMS_KEY_REGISTER } from "./globals.mjs";
-
-function text2Binary(string) {
-    return string.split('').map(function (char) {
-        return char.charCodeAt(0).toString(2);
-    }).join(' ');
-}
+import { Buffer } from 'buffer'
+// function text2Binary(string) {
+//     return string.split('').map(function (char) {
+//         return char.charCodeAt(0).toString(2);
+//     }).join(' ');
+// }
 
 export const processKmsDecrypt = async (projectid, plaintext) => {
 
@@ -57,7 +57,7 @@ export const processKmsDecrypt = async (projectid, plaintext) => {
         return new Buffer.from(response.Plaintext, 'binary').toString('utf-8');
         
     } catch (err) {
-        console.log(command);
+        console.log(err);
         // return err + "";
         
     }

@@ -3,7 +3,7 @@ import { NOTIFY_REGION, CHANGE_MANAGEMENT_API } from "./globals.mjs";
 
 export const processNotifyChangeCalendar = async (authorization, body, path) => {
   
-  let myPromise = new Promise(function(resolve, reject) {
+  let myPromise = new Promise(function(resolve) {
     
     var options = {
        host: CHANGE_MANAGEMENT_API + '.lambda-url.' + NOTIFY_REGION + '.on.aws',

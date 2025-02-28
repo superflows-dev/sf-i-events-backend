@@ -1,11 +1,11 @@
 // getcalendar (projectid)
 
 
-import { REGION, TABLE, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ROLES_ORDER, ADMIN_METHODS, BUCKET_NAME, s3Client, GetObjectCommand, PutObjectCommand } from "./globals.mjs";
+import { ROLES_ORDER, BUCKET_NAME, s3Client, GetObjectCommand } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
-import { processDecryptData } from './decryptdata.mjs'
-import { processUpdateUserMap } from './updateusermap.mjs'
+import { processDecryptData } from './decryptdata.mjs';
 import { processNotifyChange } from './notifychange.mjs'
+import { Buffer } from 'buffer'
 const pushUser = (usermap, userid, role, countryid, countryname, entityid, entityname, locationid, locationname, tags) => {
     
     if(usermap[userid] == null) usermap[userid] = {};
@@ -71,6 +71,7 @@ export const processGenerateUserMap = async (event) => {
         year = JSON.parse(event.body).year;
         userid = JSON.parse(event.body).userid;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -241,7 +242,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.approvers.length; m++) {
+                    for( m = 0; m < ev.approvers.length; m++) {
                         
                         const approverid = ev.approvers[m].split(';')[1];
                         if(approverid == userid && ev.makercheckers.length == 0){
@@ -249,7 +250,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.reporters.length; m++) {
+                    for( m = 0; m < ev.reporters.length; m++) {
                         
                         const reporterid = ev.reporters[m].split(';')[1];
                         if(reporterid == userid){
@@ -257,7 +258,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.functionheads.length; m++) {
+                    for( m = 0; m < ev.functionheads.length; m++) {
                         
                         const functionheadid = ev.functionheads[m].split(';')[1];
                         if(functionheadid == userid){
@@ -265,7 +266,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.auditors.length; m++) {
+                    for( m = 0; m < ev.auditors.length; m++) {
                         
                         // console.log('auditors', ev.auditors, projectid);
                         const auditorid = ev.auditors[m].split(';')[1];
@@ -279,23 +280,23 @@ export const processGenerateUserMap = async (event) => {
     }
     
     
-    for(var n = 0; n < Object.keys(arrApproversEvents).length; n++) {
+    for(n = 0; n < Object.keys(arrApproversEvents).length; n++) {
         
         const mmddyyyy = Object.keys(arrApproversEvents)[n];
     
-        for(var j = 0; j < Object.keys(arrApproversEvents[mmddyyyy]).length; j++) {
+        for(j = 0; j < Object.keys(arrApproversEvents[mmddyyyy]).length; j++) {
             
             const entityid = Object.keys(arrApproversEvents[mmddyyyy])[j];
             
             if(entityid.length != 36) continue;
             
-            for(var k = 0; k < Object.keys(arrApproversEvents[mmddyyyy][entityid]).length; k++) {
+            for(k = 0; k < Object.keys(arrApproversEvents[mmddyyyy][entityid]).length; k++) {
                 
                 const locationid = Object.keys(arrApproversEvents[mmddyyyy][entityid])[k];
                 
                 if(locationid.length != 36) continue; 
                 
-                for(var l = 0; l < arrApproversEvents[mmddyyyy][entityid][locationid].length; l++) {
+                for(l = 0; l < arrApproversEvents[mmddyyyy][entityid][locationid].length; l++) {
                     
                     const ev = arrApproversEvents[mmddyyyy][entityid][locationid][l];
                     const countryid = ev.countryid;
@@ -304,7 +305,7 @@ export const processGenerateUserMap = async (event) => {
                     const locationname = ev.locationname;
                     const tags = ev.tags;
                     
-                    for(var m = 0; m < ev.viewers.length; m++) {
+                    for(m = 0; m < ev.viewers.length; m++) {
                         
                         const viewersid = ev.viewers[m].split(';')[1];
                         if(viewersid == userid){
@@ -312,7 +313,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.approvers.length; m++) {
+                    for(m = 0; m < ev.approvers.length; m++) {
                         
                         const approverid = ev.approvers[m].split(';')[1];
                         if(approverid == userid && ev.makercheckers.length == 0){
@@ -320,7 +321,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.reporters.length; m++) {
+                    for(m = 0; m < ev.reporters.length; m++) {
                         
                         const reporterid = ev.reporters[m].split(';')[1];
                         if(reporterid == userid){
@@ -328,7 +329,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.functionheads.length; m++) {
+                    for(m = 0; m < ev.functionheads.length; m++) {
                         
                         const functionheadid = ev.functionheads[m].split(';')[1];
                         if(functionheadid == userid){
@@ -336,7 +337,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.auditors.length; m++) {
+                    for(m = 0; m < ev.auditors.length; m++) {
                         
                         // console.log('auditors', ev.auditors, projectid);
                         const auditorid = ev.auditors[m].split(';')[1];
@@ -350,23 +351,23 @@ export const processGenerateUserMap = async (event) => {
     }
     
     
-    for(var n = 0; n < Object.keys(arrReportersEvents).length; n++) {
+    for(n = 0; n < Object.keys(arrReportersEvents).length; n++) {
         
         const mmddyyyy = Object.keys(arrReportersEvents)[n];
     
-        for(var j = 0; j < Object.keys(arrReportersEvents[mmddyyyy]).length; j++) {
+        for(j = 0; j < Object.keys(arrReportersEvents[mmddyyyy]).length; j++) {
             
             const entityid = Object.keys(arrReportersEvents[mmddyyyy])[j];
             
             if(entityid.length != 36) continue;
             
-            for(var k = 0; k < Object.keys(arrReportersEvents[mmddyyyy][entityid]).length; k++) {
+            for(k = 0; k < Object.keys(arrReportersEvents[mmddyyyy][entityid]).length; k++) {
                 
                 const locationid = Object.keys(arrReportersEvents[mmddyyyy][entityid])[k];
                 
                 if(locationid.length != 36) continue; 
                 
-                for(var l = 0; l < arrReportersEvents[mmddyyyy][entityid][locationid].length; l++) {
+                for(l = 0; l < arrReportersEvents[mmddyyyy][entityid][locationid].length; l++) {
                     
                     const ev = arrReportersEvents[mmddyyyy][entityid][locationid][l];
                     const countryid = ev.countryid;
@@ -375,7 +376,7 @@ export const processGenerateUserMap = async (event) => {
                     const locationname = ev.locationname;
                     const tags = ev.tags;
                     
-                    for(var m = 0; m < ev.viewers.length; m++) {
+                    for(m = 0; m < ev.viewers.length; m++) {
                         
                         const viewersid = ev.viewers[m].split(';')[1];
                         if(viewersid == userid){
@@ -383,7 +384,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.approvers.length; m++) {
+                    for(m = 0; m < ev.approvers.length; m++) {
                         
                         const approverid = ev.approvers[m].split(';')[1];
                         if(approverid == userid && ev.makercheckers.length == 0){
@@ -391,7 +392,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.reporters.length; m++) {
+                    for(m = 0; m < ev.reporters.length; m++) {
                         
                         const reporterid = ev.reporters[m].split(';')[1];
                         if(reporterid == userid){
@@ -399,7 +400,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.functionheads.length; m++) {
+                    for(m = 0; m < ev.functionheads.length; m++) {
                         
                         const functionheadid = ev.functionheads[m].split(';')[1];
                         if(functionheadid == userid){
@@ -407,7 +408,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.auditors.length; m++) {
+                    for(m = 0; m < ev.auditors.length; m++) {
                         
                         // console.log('auditors', ev.auditors, projectid);
                         const auditorid = ev.auditors[m].split(';')[1];
@@ -421,23 +422,23 @@ export const processGenerateUserMap = async (event) => {
     }
     
     
-    for(var n = 0; n < Object.keys(arrFunctionHeadsEvents).length; n++) {
+    for(n = 0; n < Object.keys(arrFunctionHeadsEvents).length; n++) {
         
         const mmddyyyy = Object.keys(arrFunctionHeadsEvents)[n];
     
-        for(var j = 0; j < Object.keys(arrFunctionHeadsEvents[mmddyyyy]).length; j++) {
+        for(j = 0; j < Object.keys(arrFunctionHeadsEvents[mmddyyyy]).length; j++) {
             
             const entityid = Object.keys(arrFunctionHeadsEvents[mmddyyyy])[j];
             
             if(entityid.length != 36) continue;
             
-            for(var k = 0; k < Object.keys(arrFunctionHeadsEvents[mmddyyyy][entityid]).length; k++) {
+            for(k = 0; k < Object.keys(arrFunctionHeadsEvents[mmddyyyy][entityid]).length; k++) {
                 
                 const locationid = Object.keys(arrFunctionHeadsEvents[mmddyyyy][entityid])[k];
                 
                 if(locationid.length != 36) continue; 
                 
-                for(var l = 0; l < arrFunctionHeadsEvents[mmddyyyy][entityid][locationid].length; l++) {
+                for(l = 0; l < arrFunctionHeadsEvents[mmddyyyy][entityid][locationid].length; l++) {
                     
                     const ev = arrFunctionHeadsEvents[mmddyyyy][entityid][locationid][l];
                     const countryid = ev.countryid;
@@ -446,7 +447,7 @@ export const processGenerateUserMap = async (event) => {
                     const locationname = ev.locationname;
                     const tags = ev.tags;
                     
-                    for(var m = 0; m < ev.viewers.length; m++) {
+                    for(m = 0; m < ev.viewers.length; m++) {
                         
                         const viewersid = ev.viewers[m].split(';')[1];
                         if(viewersid == userid){
@@ -454,7 +455,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.approvers.length; m++) {
+                    for(m = 0; m < ev.approvers.length; m++) {
                         
                         const approverid = ev.approvers[m].split(';')[1];
                         if(approverid == userid && ev.makercheckers.length == 0){
@@ -462,7 +463,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.reporters.length; m++) {
+                    for(m = 0; m < ev.reporters.length; m++) {
                         
                         const reporterid = ev.reporters[m].split(';')[1];
                         if(reporterid == userid){
@@ -470,7 +471,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.functionheads.length; m++) {
+                    for(m = 0; m < ev.functionheads.length; m++) {
                         
                         const functionheadid = ev.functionheads[m].split(';')[1];
                         if(functionheadid == userid){
@@ -478,7 +479,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.auditors.length; m++) {
+                    for(m = 0; m < ev.auditors.length; m++) {
                         
                         // console.log('auditors', ev.auditors, projectid);
                         const auditorid = ev.auditors[m].split(';')[1];
@@ -491,23 +492,23 @@ export const processGenerateUserMap = async (event) => {
         }
     }
     
-    for(var n = 0; n < Object.keys(arrAuditorsEvents).length; n++) {
+    for(n = 0; n < Object.keys(arrAuditorsEvents).length; n++) {
         
         const mmddyyyy = Object.keys(arrAuditorsEvents)[n];
     
-        for(var j = 0; j < Object.keys(arrAuditorsEvents[mmddyyyy]).length; j++) {
+        for(j = 0; j < Object.keys(arrAuditorsEvents[mmddyyyy]).length; j++) {
             
             const entityid = Object.keys(arrAuditorsEvents[mmddyyyy])[j];
             
             if(entityid.length != 36) continue;
             
-            for(var k = 0; k < Object.keys(arrAuditorsEvents[mmddyyyy][entityid]).length; k++) {
+            for(k = 0; k < Object.keys(arrAuditorsEvents[mmddyyyy][entityid]).length; k++) {
                 
                 const locationid = Object.keys(arrAuditorsEvents[mmddyyyy][entityid])[k];
                 
                 if(locationid.length != 36) continue; 
                 
-                for(var l = 0; l < arrAuditorsEvents[mmddyyyy][entityid][locationid].length; l++) {
+                for(l = 0; l < arrAuditorsEvents[mmddyyyy][entityid][locationid].length; l++) {
                     
                     const ev = arrAuditorsEvents[mmddyyyy][entityid][locationid][l];
                     const countryid = ev.countryid;
@@ -516,7 +517,7 @@ export const processGenerateUserMap = async (event) => {
                     const locationname = ev.locationname;
                     const tags = ev.tags;
                     
-                    for(var m = 0; m < ev.viewers.length; m++) {
+                    for(m = 0; m < ev.viewers.length; m++) {
                         
                         const viewersid = ev.viewers[m].split(';')[1];
                         if(viewersid == userid){
@@ -524,7 +525,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.approvers.length; m++) {
+                    for(m = 0; m < ev.approvers.length; m++) {
                         
                         const approverid = ev.approvers[m].split(';')[1];
                         if(approverid == userid && ev.makercheckers.length == 0){
@@ -532,7 +533,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.reporters.length; m++) {
+                    for(m = 0; m < ev.reporters.length; m++) {
                         
                         const reporterid = ev.reporters[m].split(';')[1];
                         if(reporterid == userid){
@@ -540,7 +541,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.functionheads.length; m++) {
+                    for(m = 0; m < ev.functionheads.length; m++) {
                         
                         const functionheadid = ev.functionheads[m].split(';')[1];
                         if(functionheadid == userid){
@@ -548,7 +549,7 @@ export const processGenerateUserMap = async (event) => {
                         }
                     }
                     
-                    for(var m = 0; m < ev.auditors.length; m++) {
+                    for(m = 0; m < ev.auditors.length; m++) {
                         
                         // console.log('auditors', ev.auditors, projectid);
                         const auditorid = ev.auditors[m].split(';')[1];

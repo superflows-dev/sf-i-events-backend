@@ -1,12 +1,10 @@
 // getunmappedevents (projectid)
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_APPROVER, ROLE_REPORTER, REGION, TABLE, TABLE_FUNC, TABLE_FUNC_JOBS, AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, UpdateItemCommand, GetItemCommand, ScanCommand, PutItemCommand, ADMIN_METHODS, QueryCommand, DeleteItemCommand, GetObjectCommand, BUCKET_NAME, s3Client, SERVER_KEY } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, GetObjectCommand, BUCKET_NAME, s3Client, SERVER_KEY } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
 import { processAddLog } from './addlog.mjs';
-import { processSfIEventsAddToQueueSfCalendar } from './addtoqueuesfcalendar.mjs'
-
+import { Buffer } from 'buffer'
 export const processGetJobData = async (event) => {
     
     console.log('get job data');
@@ -57,8 +55,6 @@ export const processGetJobData = async (event) => {
             if(!authResult.admin && authoRole != ROLE_CLIENTADMIN && authoRole != ROLE_CLIENTSPOC && authoRole != ROLE_CLIENTCOORD) {
                 return {statusCode: 401, body: {result: false, error: "Unauthorized request!"}};
             }
-            
-            const userId = authResult.userId;
         
     }
     
@@ -73,6 +69,7 @@ export const processGetJobData = async (event) => {
     try {
         key = JSON.parse(event.body).key.trim();
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;

@@ -8,7 +8,7 @@ import { processDecryptData } from './decryptdata.mjs';
 import { processAuthenticate } from './authenticate.mjs';
 import { processAddLog } from './addlog.mjs';
 import { processAddUserLastTime } from './adduserlasttime.mjs'
-
+import { Buffer } from "buffer";
 export const processGetAllCountryEvents = async (event) => {
     
     console.log('inside processGetAllCountryEvents');
@@ -90,16 +90,19 @@ export const processGetAllCountryEvents = async (event) => {
     try{
         list = (JSON.parse(event.body).list == "yes")
     }catch(e){
+        console.log('list error', e)
         list = false
     }
     try{
         month = (JSON.parse(event.body).month)
     }catch(e){
+        console.log('month error', e)
         month = "00"
     }
     try{
         fullmmddyyyy = (JSON.parse(event.body).mmddyyyy)
     }catch(e){
+        console.log('fullmmddyyyy error', e)
         fullmmddyyyy = null;
     }
     
@@ -161,9 +164,6 @@ export const processGetAllCountryEvents = async (event) => {
     //       projectid: { S: projectid },
     //     },
     // };
-    
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-    
     console.log('inside processGetAllCountryEvents 3');
     const calendarList = [];
     let flagMonthlyFileNotFound = false;
@@ -187,7 +187,7 @@ export const processGetAllCountryEvents = async (event) => {
             const responseBuffer = Buffer.concat(chunks)
             let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
             const jsonContent = JSON.parse(decryptedData);
-            
+            console.log('jsonContent', jsonContent.length)       
         } catch (err) {
           console.log('monthly read error', err);
           flagMonthlyFileNotFound = true
@@ -218,7 +218,7 @@ export const processGetAllCountryEvents = async (event) => {
             const responseBuffer = Buffer.concat(chunks)
             let decryptedData = await processDecryptData(projectid, responseBuffer.toString())
             const jsonContent = JSON.parse(decryptedData);
-            
+            console.log('jsonContent', jsonContent.length)
         } catch (err) {
           console.log(err);
           flagUserFileNotFound = true
@@ -254,7 +254,7 @@ export const processGetAllCountryEvents = async (event) => {
                 
                 
             } catch (err) {
-            //   console.error(err);
+              console.error(err);
               flagEncryptedNotFound = true;
             } 
             console.log('flagEncryptedNotFound', flagEncryptedNotFound)
@@ -285,7 +285,7 @@ export const processGetAllCountryEvents = async (event) => {
                     
                     
                 } catch (err) {
-                //   console.error(err); 
+                  console.error(err); 
                 } 
             }
              
@@ -325,15 +325,15 @@ export const processGetAllCountryEvents = async (event) => {
             
             if(view == VIEW_COUNTRY) {
                 
-                for(var cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
+                for(cntManifest = 0; cntManifest < Object.keys(storedManifest).length; cntManifest++) {
                     
                     const country = Object.keys(storedManifest)[cntManifest];
                     
                     if(country == countryid) {
-                        for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                        for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                             
                             const entity = Object.keys(storedManifest[country])[cntEntities];
-                            for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                            for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                                 
                                 const location = Object.keys(storedManifest[country][entity])[cntLocations];
                                 calendarList.push(projectid + '_' + location + '_' + year + '_calendar_job');
@@ -355,10 +355,10 @@ export const processGetAllCountryEvents = async (event) => {
                         const country = Object.keys(storedManifest)[cntManifest];
                         // const tag = Object.keys(storedTagsManifest)[cntManifest];
                         // calendarList.push(projectid + '_' + tag + '_'+ year + '_calendar_job');
-                        for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                        for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                             
                             const entity = Object.keys(storedManifest[country])[cntEntities];
-                            for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                            for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                                 
                                 const location = Object.keys(storedManifest[country][entity])[cntLocations];
                                 calendarList.push(projectid + '_' + location + '_'+ year + '_calendar_job');
@@ -376,7 +376,7 @@ export const processGetAllCountryEvents = async (event) => {
                     });
                     
                     responseS3;
-                    var storedTagsManifest = {};
+                    storedTagsManifest = {};
                     let flagNotFound = false
                     try {
                         responseS3 = await s3Client.send(command);
@@ -401,10 +401,10 @@ export const processGetAllCountryEvents = async (event) => {
                             const country = Object.keys(storedManifest)[cntManifest];
                             // const tag = Object.keys(storedTagsManifest)[cntManifest];
                             // calendarList.push(projectid + '_' + tag + '_'+ year + '_calendar_job');
-                            for(var cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
+                            for(cntEntities = 0; cntEntities < Object.keys(storedManifest[country]).length; cntEntities++) {
                                 
                                 const entity = Object.keys(storedManifest[country])[cntEntities];
-                                for(var cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
+                                for(cntLocations = 0; cntLocations < Object.keys(storedManifest[country][entity]).length; cntLocations++) {
                                     
                                     const location = Object.keys(storedManifest[country][entity])[cntLocations];
                                     calendarList.push(projectid + '_' + location + '_'+ year + '_calendar_job');
@@ -515,7 +515,7 @@ export const processGetAllCountryEvents = async (event) => {
             // jsonContent = null;
             
         } catch (err) {
-        //   console.error(err); 
+          console.error(err); 
           flagEncryptedNotFound = true
         }
         if(flagEncryptedNotFound){
@@ -544,7 +544,7 @@ export const processGetAllCountryEvents = async (event) => {
                 // jsonContent = null;
                 
             } catch (err) {
-            //   console.error(err);
+              console.error(err);
             }
         }
         // console.log('storedCalendar', Object.keys(storedCalendar))
@@ -720,9 +720,7 @@ export const processGetAllCountryEvents = async (event) => {
                                 if(pushFlag && view == VIEW_TAG) {
                                     // console.log('pushFlag', pushFlag, tagid)
                                     if(tagid != "allevents") {
-                                        if(events[l]['tagsmap'][tagid] != null) {
-                                            
-                                        } else {
+                                        if(events[l]['tagsmap'][tagid] == null) {
                                             pushFlag = false;
                                         }
                                     }
@@ -754,6 +752,7 @@ export const processGetAllCountryEvents = async (event) => {
                                             || (events[l].risk + "").toLowerCase().indexOf(searchstring) >= 0
                                             || (events[l].riskarea + "").toLowerCase().indexOf(searchstring) >= 0
                                             ) {
+                                                console.log('searchstring', searchstring, events[l].obligationtitle)
                                         } else {
                                             pushFlag = false;
                                         }
@@ -786,6 +785,7 @@ export const processGetAllCountryEvents = async (event) => {
                                                 }
                                             
                                             }catch(e){
+                                                console.log('error', e)
                                                 events[l].documents = [];
                                                 events[l].comments = [];
                                                 events[l].approved = false;
@@ -882,6 +882,7 @@ export const processGetAllCountryEvents = async (event) => {
                                                 eventToBePushed['makercheckers'] = events[l]['makercheckers']
                                                 eventToBePushed['lastupdated'] = events[l]['lastupdated']
                                                 eventToBePushed['reportformat'] = events[l]['reportformat']
+                                                eventToBePushed['uploadguidance'] = events[l]['uploadguidance'] == null ? 0 : 1
                                                 if(eventToBePushed['reportformat'] != null && eventToBePushed['reportformat'].length > 0){
                                                     eventToBePushed['docs'] = ['Not Required'];
                                                 }
@@ -914,6 +915,7 @@ export const processGetAllCountryEvents = async (event) => {
                                                 eventConcise['subcategory'] = events[l]['subcategory']
                                                 eventConcise['docs'] = events[l]['docs']
                                                 eventConcise['makercheckers'] = events[l]['makercheckers']
+                                                eventConcise['uploadguidance'] = events[l]['uploadguidance'] == null ? 0 : 1
                                                 eventConcise['comments'] = []
                                                 for(let eventComment of events[l]['comments'] ?? []){
                                                     eventConcise['comments'].push({author: eventComment['author'], timestamp: eventComment['timestamp'], comment: eventComment['comment']})
@@ -999,6 +1001,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log('error', e)
         return false;
     }
     return true;

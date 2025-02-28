@@ -1,23 +1,13 @@
 // getuserevents (projectid, userprofileid)
 
 
-import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ROLE_REPORTER, ROLE_APPROVER, FINCAL_START_MONTH, REGION, TABLE,  AUTH_ENABLE, AUTH_REGION, AUTH_API, AUTH_STAGE, ddbClient, GetItemCommand, ScanCommand, PutItemCommand, QueryCommand, UpdateItemCommand, ADMIN_METHODS, TABLE_RCM_JOBS, SERVER_KEY } from "./globals.mjs";
+import { ROLE_CLIENTADMIN, ROLE_CLIENTSPOC, ROLE_CLIENTCOORD, ddbClient, UpdateItemCommand, TABLE_RCM_JOBS, SERVER_KEY } from "./globals.mjs";
 import { processAuthenticate } from './authenticate.mjs';
 import { processAuthorize } from './authorize.mjs';
-import { newUuidV4 } from './newuuid.mjs';
-import { processAddLog } from './addlog.mjs';
-
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
+import { Buffer } from "buffer";
 
 export const processUpdateRcmJob = async (event) => {
     
-    var serverkey = "";
-    var userId = "1234"
     
     if((event["headers"]["x-server-key"]) != null) {
         
@@ -80,7 +70,6 @@ export const processUpdateRcmJob = async (event) => {
         //     }   
         // }
         
-        userId = authResult.userId;
     
     }
     
@@ -95,6 +84,7 @@ export const processUpdateRcmJob = async (event) => {
         id = JSON.parse(event.body).id.trim();
         status = JSON.parse(event.body).status.trim();
     } catch (e) {
+        console.log('error', e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         //processAddLog(userId, 'detail', event, response, response.statusCode)
         return response;
@@ -146,7 +136,7 @@ export const processUpdateRcmJob = async (event) => {
         }
     };
     
-    var resultUpdate = await ddbUpdate(setParams);
+    await ddbUpdate(setParams);
     
     const response = {statusCode: 200, body: {result: true}};
     return response;

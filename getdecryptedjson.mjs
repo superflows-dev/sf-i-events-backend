@@ -1,7 +1,7 @@
 import { processAuthenticate } from './authenticate.mjs'
-import { BUCKET_NAME, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, s3Client, KMS_KEY_REGISTER, getSignedUrl } from './globals.mjs'
+import { BUCKET_NAME, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, s3Client, getSignedUrl } from './globals.mjs'
 import { processDecryptData } from './decryptdata.mjs'
-
+import { Buffer } from 'buffer'
 export const processGetDecryptedJson = async (event) => {
     if((event["headers"]["Authorization"]) == null) {
         return {statusCode: 400, body: { result: false, error: "Malformed headers!"}};
@@ -45,6 +45,7 @@ export const processGetDecryptedJson = async (event) => {
         projectid = JSON.parse(event.body).projectid;
         key = JSON.parse(event.body).key;
     } catch (e) {
+        console.log(e);
         const response = {statusCode: 400, body: { result: false, error: "Malformed body!"}};
         return response;
     }
@@ -98,11 +99,9 @@ export const processGetDecryptedJson = async (event) => {
       Body: JSON.stringify(jsonData),
       ContentType: 'application/json'
     });
-    let responseS3;
     try {
-      responseS3 = await s3Client.send(command);
+      await s3Client.send(command);
     } catch (err) {
-      responseS3 = err;
       console.log(err);
     }
     
@@ -129,6 +128,7 @@ function isJsonString(str) {
     try {
         JSON.parse(str);
     } catch (e) {
+        console.log(e);
         return false;
     }
     return true;
